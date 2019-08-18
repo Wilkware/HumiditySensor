@@ -1,0 +1,55 @@
+{
+  "elements": [
+    {"type": "ExpansionPanel", "caption": "Outdoor climate",
+      "items": [
+        {"type": "SelectVariable", "name": "TempOutdoor", "caption": "Temperature:" },
+        {"type": "SelectVariable", "name": "HumyOutdoor", "caption": "Humidity:" }
+      ]
+    },
+    {"type": "ExpansionPanel", "caption": "Indoor climate",
+      "items": [
+        {"type": "SelectVariable", "name": "TempIndoor", "caption": "Temperature:" },
+        {"type": "SelectVariable", "name": "HumyIndoor", "caption": "Humidity:" }
+      ]
+    },
+    {"type": "ExpansionPanel", "caption": "Dashboard",
+      "items": [
+        {"type": "Label", "caption": "Settings to use the dashboard message script. More information you get in the forum to thema: Meldungsanzeige im WebFront." },
+        {"type": "SelectScript", "name": "ScriptMessage", "caption": "Message script:" },
+        {"type": "Label", "caption": "For better assign the message, we need a room name!" },
+        {"type": "ValidationTextBox", "name": "RoomName", "caption": "Room name:" },
+        {"type": "Select", "name": "LifeTime", "caption": "Message Life Time:",
+          "options": [
+            {"label": "Always", "value": 0 },
+            {"label": "5 min", "value": 5 },
+            {"label": "15 min", "value": 15 },
+            {"label": "30 min", "value": 30 },
+            {"label": "60 min", "value": 60 },
+            {"label": "2 h", "value": 120 }
+          ]
+        },
+        {"type": "Label", "caption": "Send messages only when the following threshold value is exceeded." },
+        {"type": "NumberSpinner", "name": "MessageThreshold", "caption": "Difference (Threshold):", "suffix": "% (percent)"}
+      ]
+    },
+    {"type": "ExpansionPanel", "caption": "Advanced settings",
+      "items": [
+        {"type": "Select", "name": "UpdateTimer", "caption": "Update Timer:",
+          "options": [
+            {"label": "5 min", "value": 5 },
+            {"label": "15 min", "value": 15 },
+            {"label": "30 min", "value": 30 },
+            {"label": "60 min", "value": 60 },
+            {"label": "2 h", "value": 120 }
+          ]
+        },
+        {"type": "CheckBox", "name": "CreateDewPoint", "caption": "Create variables for indoor and outdoor dewpoint?" },
+        {"type": "CheckBox", "name": "CreateWaterContent", "caption": "Create variables for indoor and outdoor water content?" }
+      ]
+    }
+  ],
+  "actions": [
+    {"type": "Label", "caption": "Calculate values!" },
+    {"type": "Button", "caption": "BERECHNEN", "onClick": "THS_Update($id);" }
+  ]
+}
