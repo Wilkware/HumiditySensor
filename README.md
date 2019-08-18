@@ -5,11 +5,11 @@
 [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![StyleCI](https://github.styleci.io/repos/76893952/shield?style=flat)](https://github.styleci.io/repos/76893952)
 
-# Luftfeuchtigssensor
+# Luftfeuchtigkeitssensor
 
 Brechnet anhand der Innen- und Aussentemperatur, sowie der Innen- und Aussenluftfeuchtigkeit den  
 Wassergehalt der Luft, den Taupunkt und ermittelt so ob ein Lüften des Raumes von Vorteil wäre.  
-Wer die Meldungsverwaltung (Thema: "Meldungsanzeige im Webfront" <https://www.symcon.de/forum/threads/12115-Meldungsanzeige-im-WebFront?highlight=Meldungsverwaltung>)  
+Wer die Meldungsverwaltung (Thema: "Meldungsanzeige im Webfront" <https://www.symcon.de/forum/threads/12115-Meldungsanzeige-im-WebFront?highlight=Meldungsverwaltung>)
 kann sich über den aktuellen Stand seiner Räume darüber informieren lassen.
 
 ## Inhaltverzeichnis
@@ -41,7 +41,7 @@ kann sich über den aktuellen Stand seiner Räume darüber informieren lassen.
 
 ### 4. Einrichten der Instanzen in IP-Symcon
 
-* Unter "Instanz hinzufügen" ist das 'Luftfeuchtigssensor'-Modul (Alias: Luftfeuchtigsrechner) unter dem Hersteller '(Sonstige)' aufgeführt.
+* Unter "Instanz hinzufügen" ist das 'Luftfeuchtigkeitsssensor'-Modul (Alias: Luftfeuchtigkeitsrechner) unter dem Hersteller '(Sonstige)' aufgeführt.
 
 __Konfigurationsseite__:
 
@@ -105,10 +105,9 @@ Setzt die Wartezeit auf 60 Minuten.
 
 ### 8. Versionshistorie
 
-v1.0.20190317
+v1.1.20190818
 
 * _NEU_: Umstellung für Module Store
-* _FIX_: Anzeige ob gelüftet werden soll oder nicht
 
 v1.0.20190317
 
