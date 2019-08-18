@@ -1,4 +1,3 @@
-
 [![Version](https://img.shields.io/badge/Symcon-PHP--Modul-red.svg)](https://www.symcon.de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/)
 [![Product](https://img.shields.io/badge/Symcon%20Version-5.0%20%3E-blue.svg)](https://www.symcon.de/produkt/)
 [![Version](https://img.shields.io/badge/Modul%20Version-1.1.20190818-orange.svg)](https://github.com/Wilkware/IPSymconToolmatic)
@@ -103,11 +102,20 @@ Beispiel:
 `THS_Duration(12345, 60);`  
 Setzt die Wartezeit auf 60 Minuten.
 
+`void THS_MessageThreshold(int $InstanzID, int $Threshold);`  
+Setzt den Schwellwert ab wann eine aktive Meldung erfolgen soll.  
+Die Funktion liefert keinerlei Rückgabewert.
+
+Beispiel:  
+`THS_MessageThreshold(12345, 100);`  
+Setzt den Schwellwert auf 100.
+
 ### 8. Versionshistorie
 
 v1.1.20190818
 
 * _NEU_: Umstellung für Module Store
+* _FIX_: Dokumentation überarbeitet
 
 v1.0.20190317
 
