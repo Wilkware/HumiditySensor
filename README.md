@@ -4,11 +4,15 @@
 [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![StyleCI](https://github.styleci.io/repos/203009208/shield?style=flat)](https://github.styleci.io/repos/203009208)
 
-# Luftfeuchtigkeitssensor
+# Toolmatic Humitidy Sensor (Luftfeuchtigkeitssensor)
 
-Brechnet anhand der Innen- und Aussentemperatur, sowie der Innen- und Aussenluftfeuchtigkeit den  
+Die *Toolmatic Bibliothek* ist eine kleine Tool-Sammlung im Zusammenhang mit HomeMatic/IP Geräten.  
+Hauptsächlich beinhaltet sie kleine Erweiterung zur Automatisierung von Aktoren oder erleichtert das Steuern von Geräten bzw. bietet mehr Komfort bei der Bedienung.  
+  
+Der Luftfeuchtigkeitssensor berechnet anhand der Innen- und Aussentemperatur, sowie der Innen- und Aussenluftfeuchtigkeit den  
 Wassergehalt der Luft, den Taupunkt und ermittelt so ob ein Lüften des Raumes von Vorteil wäre.  
-Wer die Meldungsverwaltung (Thema: "Meldungsanzeige im Webfront" <https://www.symcon.de/forum/threads/12115-Meldungsanzeige-im-WebFront?highlight=Meldungsverwaltung>)
+  
+Wer die Meldungsverwaltung (Thema: "Meldungsanzeige im Webfront" <https://www.symcon.de/forum/threads/12115-Meldungsanzeige-im-WebFront?highlight=Meldungsverwaltung>)  
 kann sich über den aktuellen Stand seiner Räume darüber informieren lassen.
 
 ## Inhaltverzeichnis
@@ -26,7 +30,9 @@ kann sich über den aktuellen Stand seiner Räume darüber informieren lassen.
 
 * Berechnung des Wassergehaltes der Luft für Innen und Aussen
 * Berechnung des Taupunktes der Luft für Innen und Aussen
+* Berechnet Differenz zwischen Innen- und Aussenluftfeutigkeit
 * Hinweis ob Lüften des Raumes angebracht wäre
+* Liefert textuelle Erklärung für die Entscheidung
 
 ### 2. Voraussetzungen
 
@@ -34,13 +40,13 @@ kann sich über den aktuellen Stand seiner Räume darüber informieren lassen.
 
 ### 3. Installation
 
-* Über den Modul Store das Modul 'Humitidy Sensor' installieren.
+* Über den Modul Store das Modul *Toolmatic Humitidy Sensor* installieren.
 * Alternativ Über das Modul-Control folgende URL hinzufügen.  
 `https://github.com/Wilkware/IPSymconHumitidySensor` oder `git://github.com/Wilkware/IPSymconHumitidySensor.git`
 
 ### 4. Einrichten der Instanzen in IP-Symcon
 
-* Unter "Instanz hinzufügen" ist das 'Luftfeuchtigkeitsssensor'-Modul (Alias: Luftfeuchtigkeitsrechner) unter dem Hersteller '(Sonstige)' aufgeführt.
+* Unter 'Instanz hinzufügen' ist das *Luftfeuchtigkeitsssensor*-Modul (Alias: *Luftfeuchtigkeitsrechner*) unter dem Hersteller '(Geräte)' aufgeführt.
 
 __Konfigurationsseite__:
 

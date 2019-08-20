@@ -41,8 +41,8 @@ class HumitidySensor extends IPSModule
 
         // Profile "THS.AirOrNot"
         $association = [
-            [0, 'Nicht Lüften!', 'Window-100', 0xFF0000],
-            [1, 'Lüften!', 'Window-0', 0x00FF00],
+            [0, 'Nicht Lüften!', 'Window-100', 0x00FF00],
+            [1, 'Lüften!', 'Window-0', 0xFF0000],
         ];
         $this->RegisterProfile(vtBoolean, 'THS.AirOrNot', 'Window', '', '', 0, 0, 0, 0, $association);
 
@@ -54,10 +54,10 @@ class HumitidySensor extends IPSModule
 
         // Profile "THS.Difference"
         $association = [
-            [-500, '%0.2f %%', 'Window-100', 32768],
-            [0, '%0.2f %%', 'Window-100', 32768],
+            [-500, '%0.2f %%', 'Window-0', 16711680],
+            [0, '%0.2f %%', 'Window-0', 16711680],
             [0.01, '+%0.2f %%', 'Window-100', 16744448],
-            [10, '+%0.2f %%', 'Window-0', 16711680],
+            [10, '+%0.2f %%', 'Window-100', 32768],
         ];
         $this->RegisterProfile(vtFloat, 'THS.Difference', 'Window', '', '', 0, 0, 0, 2, $association);
 
