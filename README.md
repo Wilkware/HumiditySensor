@@ -9,11 +9,9 @@
 Die *Toolmatic Bibliothek* ist eine kleine Tool-Sammlung im Zusammenhang mit HomeMatic/IP Geräten.  
 Hauptsächlich beinhaltet sie kleine Erweiterung zur Automatisierung von Aktoren oder erleichtert das Steuern von Geräten bzw. bietet mehr Komfort bei der Bedienung.  
   
-Der Luftfeuchtigkeitssensor berechnet anhand der Innen- und Aussentemperatur, sowie der Innen- und Aussenluftfeuchtigkeit den  
-Wassergehalt der Luft, den Taupunkt und ermittelt so ob ein Lüften des Raumes von Vorteil wäre.  
+Der Luftfeuchtigkeitssensor berechnet anhand der Innen- und Aussentemperatur, sowie der Innen- und Aussenluftfeuchtigkeit den Wassergehalt der Luft, den Taupunkt und ermittelt so ob ein Lüften des Raumes von Vorteil wäre.  
   
-Wer die Meldungsverwaltung (Thema: "Meldungsanzeige im Webfront" <https://www.symcon.de/forum/threads/12115-Meldungsanzeige-im-WebFront?highlight=Meldungsverwaltung>)  
-kann sich über den aktuellen Stand seiner Räume darüber informieren lassen.
+Wer die Meldungsverwaltung (Thema: [Meldungsanzeige im Webfront](https://www.symcon.de/forum/threads/12115-Meldungsanzeige-im-WebFront?highlight=Meldungsverwaltung)) kann sich über den aktuellen Stand seiner Räume darüber informieren lassen.
 
 ## Inhaltverzeichnis
 
@@ -121,6 +119,7 @@ Setzt den Schwellwert auf 100.
 v1.1.20190818
 
 * _NEU_: Umstellung für Module Store
+* _FIX_: Profile überarbeitet
 * _FIX_: Dokumentation überarbeitet
 
 v1.0.20190317
