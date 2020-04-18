@@ -1,11 +1,14 @@
 <?php
 
-require_once __DIR__.'/../libs/traits.php';  // Allgemeine Funktionen
+declare(strict_types=1);
+
+require_once __DIR__ . '/../libs/traits.php';  // Allgemeine Funktionen
 
 // CLASS HumitidySensor
 class HumitidySensor extends IPSModule
 {
-    use ProfileHelper, DebugHelper;
+    use ProfileHelper;
+    use DebugHelper;
 
     public function Create()
     {
@@ -212,13 +215,13 @@ class HumitidySensor extends IPSModule
                 if ($time > 0) {
                     IPS_RunScriptWaitEx(
                         $scriptId,
-                        ['action'       => 'add', 'text' => $room.': '.$result, 'expires' => time() + $time,
+                        ['action'       => 'add', 'text' => $room . ': ' . $result, 'expires' => time() + $time,
                             'removable' => true, 'type' => 3, 'image' => 'Ventilation', ]
                     );
                 } else {
                     IPS_RunScriptWaitEx(
                         $scriptId,
-                        ['action'       => 'add', 'text' => $room.': '.$result,
+                        ['action'       => 'add', 'text' => $room . ': ' . $result,
                             'removable' => true, 'type' => 3, 'image' => 'Ventilation', ]
                     );
                 }
