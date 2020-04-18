@@ -210,13 +210,17 @@ class HumitidySensor extends IPSModule
             $time = $time * 60;
             if (IPS_ScriptExists($scriptId)) {
                 if ($time > 0) {
-                    IPS_RunScriptWaitEx($scriptId,
+                    IPS_RunScriptWaitEx(
+                        $scriptId,
                         ['action'       => 'add', 'text' => $room.': '.$result, 'expires' => time() + $time,
-                            'removable' => true, 'type' => 3, 'image' => 'Ventilation', ]);
+                            'removable' => true, 'type' => 3, 'image' => 'Ventilation', ]
+                    );
                 } else {
-                    IPS_RunScriptWaitEx($scriptId,
+                    IPS_RunScriptWaitEx(
+                        $scriptId,
                         ['action'       => 'add', 'text' => $room.': '.$result,
-                            'removable' => true, 'type' => 3, 'image' => 'Ventilation', ]);
+                            'removable' => true, 'type' => 3, 'image' => 'Ventilation', ]
+                    );
                 }
             }
         }

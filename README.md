@@ -1,10 +1,10 @@
+# Toolmatic Humitidy Sensor (Luftfeuchtigkeitssensor)
+
 [![Version](https://img.shields.io/badge/Symcon-PHP--Modul-red.svg)](https://www.symcon.de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/)
 [![Product](https://img.shields.io/badge/Symcon%20Version-5.0%20%3E-blue.svg)](https://www.symcon.de/produkt/)
 [![Version](https://img.shields.io/badge/Modul%20Version-1.1.20190818-orange.svg)](https://github.com/Wilkware/IPSymconHumitidySensor)
 [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-[![StyleCI](https://github.styleci.io/repos/203009208/shield?style=flat)](https://github.styleci.io/repos/203009208)
-
-# Toolmatic Humitidy Sensor (Luftfeuchtigkeitssensor)
+[![Actions](https://github.com/Wilkware/IPSymconHumitidySensor/workflows/Check%20Style/badge.svg)](https://github.com/Wilkware/IPSymconHumitidySensor/actions)
 
 Die *Toolmatic Bibliothek* ist eine kleine Tool-Sammlung im Zusammenhang mit HomeMatic/IP Geräten.  
 Hauptsächlich beinhaltet sie kleine Erweiterung zur Automatisierung von Aktoren oder erleichtert das Steuern von Geräten bzw. bietet mehr Komfort bei der Bedienung.  
@@ -132,8 +132,9 @@ v1.0.20190317
 
 ## Spenden
 
-Die Software ist für die nicht kommzerielle Nutzung kostenlos, Schenkungen als Unterstützung für den Entwickler bitte hier:  
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8816166" target="_blank"><img src="https://www.paypalobjects.com/de_DE/DE/i/btn/btn_donate_LG.gif" border="0" /></a>
+Die Software ist für die nicht kommzerielle Nutzung kostenlos, Schenkungen als Unterstützung für den Entwickler bitte hier:
+
+[![License](https://img.shields.io/badge/Einfach%20spenden%20mit-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8816166)
 
 ## Lizenz
 
