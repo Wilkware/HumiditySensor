@@ -1,17 +1,15 @@
 # Toolmatic Humitidy Sensor (Luftfeuchtigkeitssensor)
 
 [![Version](https://img.shields.io/badge/Symcon-PHP--Modul-red.svg)](https://www.symcon.de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/)
-[![Product](https://img.shields.io/badge/Symcon%20Version-5.0%20%3E-blue.svg)](https://www.symcon.de/produkt/)
-[![Version](https://img.shields.io/badge/Modul%20Version-1.1.20190818-orange.svg)](https://github.com/Wilkware/IPSymconHumiditySensor)
+[![Product](https://img.shields.io/badge/Symcon%20Version-5.2-blue.svg)](https://www.symcon.de/produkt/)
+[![Version](https://img.shields.io/badge/Modul%20Version-2.0.20210706-orange.svg)](https://github.com/Wilkware/IPSymconHumiditySensor)
 [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![Actions](https://github.com/Wilkware/IPSymconHumiditySensor/workflows/Check%20Style/badge.svg)](https://github.com/Wilkware/IPSymconHumiditySensor/actions)
 
 Die *Toolmatic Bibliothek* ist eine kleine Tool-Sammlung im Zusammenhang mit HomeMatic/IP Geräten.  
 Hauptsächlich beinhaltet sie kleine Erweiterung zur Automatisierung von Aktoren oder erleichtert das Steuern von Geräten bzw. bietet mehr Komfort bei der Bedienung.  
   
-Der Luftfeuchtigkeitssensor berechnet anhand der Innen- und Aussentemperatur, sowie der Innen- und Aussenluftfeuchtigkeit den Wassergehalt der Luft, den Taupunkt und ermittelt so ob ein Lüften des Raumes von Vorteil wäre.  
-  
-Wer die Meldungsverwaltung (Thema: [Meldungsanzeige im Webfront](https://www.symcon.de/forum/threads/12115-Meldungsanzeige-im-WebFront?highlight=Meldungsverwaltung)) kann sich über den aktuellen Stand seiner Räume darüber informieren lassen.
+Der *Luftfeuchtigkeitssensor* berechnet anhand der Innen- und Aussentemperatur, sowie der Innen- und Aussenluftfeuchtigkeit den Wassergehalt der Luft, den Taupunkt und ermittelt so ob ein Lüften des Raumes von Vorteil wäre.
 
 ## Inhaltverzeichnis
 
@@ -31,10 +29,11 @@ Wer die Meldungsverwaltung (Thema: [Meldungsanzeige im Webfront](https://www.sym
 * Berechnet Differenz zwischen Innen- und Aussenluftfeutigkeit
 * Hinweis ob Lüften des Raumes angebracht wäre
 * Liefert textuelle Erklärung für die Entscheidung
+* Möglichkeit sich über Meldungsscript oder Push Notification informieren zu lassen
 
 ### 2. Voraussetzungen
 
-* IP-Symcon ab Version 5.0
+* IP-Symcon ab Version 5.2
 
 ### 3. Installation
 
@@ -44,22 +43,41 @@ Wer die Meldungsverwaltung (Thema: [Meldungsanzeige im Webfront](https://www.sym
 
 ### 4. Einrichten der Instanzen in IP-Symcon
 
-* Unter 'Instanz hinzufügen' ist das *Luftfeuchtigkeitsssensor*-Modul (Alias: *Luftfeuchtigkeitsrechner*) unter dem Hersteller '(Geräte)' aufgeführt.
+* Unter 'Instanz hinzufügen' ist das *Luftfeuchtigkeitsssensor*-Modul (Alias: *Luftfeuchtigkeitsrechner*) unter dem Hersteller _'(Geräte)'_ aufgeführt.
 
 __Konfigurationsseite__:
 
+Einstellungsbereich:
+
+> Klimadaten  ...
+
 Name                          | Beschreibung
-------------------            | ---------------------------------
-Temperatur (Außenklima)       | Außentemperatur
-Luftfeuchigkeit (Außenklima)  | Außenluftfeuchte
-Temperatur (Raumklima)        | Innen(Raum)temperatur
-Luftfeuchigkeit (Raumklima)   | Innen(Raum)luftfeuchte
-Meldungsscript                | Skript ID des Meldungsverwaltungsscripts
-Raumname                      | Text zur eindeutigen Zuordnung des Raums
-Lebensdauer der Nachricht     | Wie lange so die Info angezeigt werden?
+----------------------------- | ---------------------------------
+Außentemperatur               | Temperatur (Außenklima)
+Luftfeuchtigkeit außen        | Luftfeuchigkeit (Außenklima)
+Innentemperatur               | Temperatur (Raumklima)
+Luftfeuchtigkeit innen        | Luftfeuchigkeit (Raumklima)
+
+> Meldungsverwaltung ...
+
+Name                           | Beschreibung
+------------------------------ | ---------------------------------
+Meldung an Anzeige senden      | Auswahl ob Eintrag in die Meldungsverwaltung erfolgen soll oder nicht (Ja/Nein)
+Lebensdauer der Nachricht      | Wie lange so die Meldung angezeigt werden?
+Nachricht ans Webfront senden  | Auswahl ob Push-Nachricht gesendet werden soll oder nicht (Ja/Nein)
+Raumname                       | Text zur eindeutigen Zuordnung des Raums
+Differenz(Schwellwert)         | Schwellwert/Offset ab welchen bei Überschreitung bzw. Unterschreitung eine Meldung erfolgen soll; gerade in Wintermonaten wird der Lüftungszustand sehr schnell erreicht
+Meldsungsskript                | Skript ID des Meldungsverwaltungsskripts, weiterführende Infos im Forum: [Meldungsanzeige im Webfront](https://community.symcon.de/t/meldungsanzeige-im-webfront/23473)
+WebFront Instanz               | ID des Webfronts, an welches die Push-Nachrichten gesendet werden soll
+
+> Erweiterte Einstellungen ...
+
+Name                                             | Beschreibung
+------------------------------------------------ | ---------------------------------
 Aktualisierungszeit           | Aktualisierungszeitraum in Minuten
 Checkbox Taupunkt             | Frage, ob die Variablen für Taupunkte angelegt werden sollen.
-Checkbox Wassergehalt         | Frage, ob die Variablen für Taupunkte angelegt werden sollen.
+Checkbox Wassergehalt         | Frage, ob die Variablen für Wassergehalte angelegt werden sollen.
+Checkbox Zustandsvariable     | Frage, ob eine Statusvariable für das Einstellen des Schwellwertes angelegt werden soll.
 
 ### 5. Statusvariablen und Profile
 
@@ -74,6 +92,7 @@ Taupunkt Innen       | Float     | Taupunkt der Innenluft
 Ergebnis             | String    | Zusammenfassung des Berechnungsergebnisses
 Hinweis              | Boolean   | Hinweis ob Lüften oder nicht!
 Differenz            | Float     | Differenz der Luftfeute zwischen Aussen und Innen  [+]=Innen feuchter, [-]=Aussen feuchter
+Schwellwert          | Integer   | Offset der auf den realen Wert addiert wird und somit eine Meldung zum Lüften "verzögert"
 
 Folgende Profile werden angelegt:
 
@@ -82,39 +101,55 @@ Name                 | Typ       | Beschreibung
 THS.Differnce        | Float     | Differenz der Luftfeuchte in Prozent (Vorzeichenbehaftet)
 THS.WaterContent     | Float     | Wassergehalt der Luft in g/m³
 THS.AirOrNot         | Boolaen   | Lüften (true) oder Nicht (false)
+THS.Threshold        | Integer   | Prozentualer Offsetwert für Meldungsverzögerung (0 - 250 in 10er Schritten)
 
 ### 6. WebFront
 
 Die erzeugten Variablen können direkt ins Webfront verlingt werden.  
 
-_Hinweis:_ Das Script 'Meldungsanzeige im Webfront' (Meldungsverwaltung) wird unterstützt.
-
 ### 7. PHP-Befehlsreferenz
 
-`void THS_Update(int $InstanzID);`
-Holt entsprechend der Konfiguration die gewählten Daten und berechnet die Werte.
+```php
+void THS_Update(int $InstanzID);
+```
+
+Holt entsprechend der Konfiguration die gewählten Daten und berechnet die Werte.  
 Die Funktion liefert keinerlei Rückgabewert.
 
-Beispiel:
-`THS_Update(12345);`
+__Beispiel__: `THS_Update(12345);`
 
-`void THS_Duration(int $InstanzID, int $Minutes);`  
+```php
+void THS_Duration(int $InstanzID, int $Minutes);
+```
+
 Setzt die Aktualisierungszeit (Timer) auf die neuen 'x' Minuten.  
 Die Funktion liefert keinerlei Rückgabewert.
 
-Beispiel:  
-`THS_Duration(12345, 60);`  
+__Beispiel__: `THS_Duration(12345, 60);`  
 Setzt die Wartezeit auf 60 Minuten.
 
-`void THS_MessageThreshold(int $InstanzID, int $Threshold);`  
+```php
+void THS_MessageThreshold(int $InstanzID, int $Threshold);
+```
+
 Setzt den Schwellwert ab wann eine aktive Meldung erfolgen soll.  
 Die Funktion liefert keinerlei Rückgabewert.
 
-Beispiel:  
-`THS_MessageThreshold(12345, 100);`  
+__Beispiel__: `THS_MessageThreshold(12345, 100);`  
 Setzt den Schwellwert auf 100.
 
 ### 8. Versionshistorie
+
+v2.0.20210607
+
+* _NEU_: Konfigurationsformular komplett überarbeitet und vereinheitlicht
+* _NEU_: Meldungsverwaltung überarbeitet, erweitert und vereinheitlicht
+* _NEU_: Schwellwert(Offset) kann über Webfront(RequestAction) gesetzt bzw. manipuliert werden
+* _NEU_: Funktionen `THS_Threshold` und `THS_Duration` wegen Verwendung von IPS_SetProperty entfernt
+* _FIX_: Übersetzungen nachgezogen
+* _FIX_: Interne Bibliotheken überarbeitet und vereinheitlicht
+* _FIX_: Debug Meldungen überarbeitet
+* _FIX_: Dokumentation überarbeitet
 
 v1.1.20190818
 
@@ -128,13 +163,15 @@ v1.0.20190317
 
 ## Entwickler
 
-* Heiko Wilknitz ([@wilkware](https://github.com/wilkware))
+Seit nunmehr über 10 Jahren fasziniert mich das Thema Haussteuerung. In den letzten Jahren betätige ich mich auch intensiv in der IP-Symcon Community und steuere dort verschiedenste Skript und Module bei. Ihr findet mich dort unter dem Namen @pitti ;-)
+
+[![GitHub](https://img.shields.io/badge/GitHub-@wilkware-blueviolet.svg?logo=github)](https://wilkware.github.io/)
 
 ## Spenden
 
-Die Software ist für die nicht kommzerielle Nutzung kostenlos, Schenkungen als Unterstützung für den Entwickler bitte hier:
+Die Software ist für die nicht kommzerielle Nutzung kostenlos, über eine Spende bei Gefallen des Moduls würde ich mich freuen.
 
-[![License](https://img.shields.io/badge/Einfach%20spenden%20mit-PayPal-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8816166)
+[![PayPal](https://img.shields.io/badge/PayPal-spenden-blue.svg?logo=paypal)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8816166)
 
 ## Lizenz
 

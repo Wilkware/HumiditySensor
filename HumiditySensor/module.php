@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../libs/traits.php';  // Allgemeine Funktionen
+// Allgemeine Funktionen
+require_once __DIR__ . '/../libs/_traits.php';
 
 // CLASS HumitidySensor
 class HumitidySensor extends IPSModule
@@ -22,6 +23,9 @@ class HumitidySensor extends IPSModule
         $this->RegisterPropertyInteger('TempIndoor', 0);
         $this->RegisterPropertyInteger('HumyIndoor', 0);
         // Dashboard
+        $this->RegisterPropertyInteger('DashboardMessage', 0);
+        $this->RegisterPropertyInteger('NotificationMessage', 0);
+        $this->RegisterPropertyInteger('InstanceWebfront', 0);
         $this->RegisterPropertyInteger('ScriptMessage', 0);
         $this->RegisterPropertyString('RoomName', 'Unknown');
         $this->RegisterPropertyInteger('LifeTime', 0);
@@ -30,6 +34,7 @@ class HumitidySensor extends IPSModule
         $this->RegisterPropertyInteger('UpdateTimer', 15);
         $this->RegisterPropertyBoolean('CreateDewPoint', true);
         $this->RegisterPropertyBoolean('CreateWaterContent', true);
+        $this->RegisterPropertyBoolean('CreateThreshold', false);
         // Update trigger
         $this->RegisterTimer('UpdateTrigger', 0, "THS_Update(\$_IPS['TARGET']);");
     }
@@ -63,20 +68,29 @@ class HumitidySensor extends IPSModule
             [10, '+%0.2f %%', 'Window-100', 32768],
         ];
         $this->RegisterProfile(vtFloat, 'THS.Difference', 'Window', '', '', 0, 0, 0, 2, $association);
+        // Profil "THS.Threshold"
+        $this->RegisterProfile(vtInteger, 'THS.Threshold', 'Tap', '', '+ %', 0, 250, 10, 0);
 
         // Ergebnis & Hinweis & Differenz
-        $this->MaintainVariable('Hint', 'Hinweis', vtBoolean, 'THS.AirOrNot', 1, true);
-        $this->MaintainVariable('Result', 'Ergebnis', vtString, '', 2, true);
-        $this->MaintainVariable('Difference', 'Differenz', vtFloat, 'THS.Difference', 3, true);
+        $this->MaintainVariable('Hint', $this->Translate('Hint'), vtBoolean, 'THS.AirOrNot', 1, true);
+        $this->MaintainVariable('Result', $this->Translate('Result'), vtString, '', 2, true);
+        $this->MaintainVariable('Difference', $this->Translate('Difference'), vtFloat, 'THS.Difference', 3, true);
         // Taupunkt
         $create = $this->ReadPropertyBoolean('CreateDewPoint');
-        $this->MaintainVariable('DewPointOutdoor', 'Taupunkt Aussen', vtFloat, '~Temperature', 4, $create);
-        $this->MaintainVariable('DewPointIndoor', 'Taupunkt Innen', vtFloat, '~Temperature', 5, $create);
-
+        $this->MaintainVariable('DewPointOutdoor', $this->Translate('Dew point outdoor'), vtFloat, '~Temperature', 4, $create);
+        $this->MaintainVariable('DewPointIndoor', $this->Translate('Dew point indoor'), vtFloat, '~Temperature', 5, $create);
         // Wassergehalt (WaterContent)
         $create = $this->ReadPropertyBoolean('CreateWaterContent');
-        $this->MaintainVariable('WaterContentOutdoor', 'Wassergehalt Aussen', vtFloat, 'THS.WaterContent', 6, $create);
-        $this->MaintainVariable('WaterContentIndoor', 'Wassergehalt Innen', vtFloat, 'THS.WaterContent', 7, $create);
+        $this->MaintainVariable('WaterContentOutdoor', $this->Translate('Water content outdoor'), vtFloat, 'THS.WaterContent', 6, $create);
+        $this->MaintainVariable('WaterContentIndoor', $this->Translate('Water content indoor'), vtFloat, 'THS.WaterContent', 7, $create);
+        // Schwellwert (Threshold)
+        $create = $this->ReadPropertyBoolean('CreateThreshold');
+        $this->MaintainVariable('MessageThreshold', $this->Translate('Message threshold'), vtInteger, 'THS.Threshold', 8, $create);
+        if ($create) {
+            //$threshold = $this->ReadPropertyInteger('MessageThreshold');
+            //$this->SetValueInteger('MessageThreshold', $threshold);
+            $this->EnableAction('MessageThreshold');
+        }
     }
 
     /**
@@ -95,7 +109,7 @@ class HumitidySensor extends IPSModule
         if ($to != 0) {
             $to = GetValue($to);
         } else {
-            $this->SendDebug('UPDATE', 'Temperature Outdoor not set!');
+            $this->SendDebug(__FUNCTION__, 'Temperature Outdoor not set!');
             $state = false;
         }
         // Humidity Outdoor
@@ -107,7 +121,7 @@ class HumitidySensor extends IPSModule
                 $ho = $ho * 100.;
             }
         } else {
-            $this->SendDebug('UPDATE', 'Humidity Outdoor not set!');
+            $this->SendDebug(__FUNCTION__, 'Humidity Outdoor not set!');
             $state = false;
         }
         // Temp Indoor
@@ -115,7 +129,7 @@ class HumitidySensor extends IPSModule
         if ($ti != 0) {
             $ti = GetValue($ti);
         } else {
-            $this->SendDebug('UPDATE', 'Temperature Indoor not set!');
+            $this->SendDebug(__FUNCTION__, 'Temperature Indoor not set!');
             $state = false;
         }
         // Humidity Indoor
@@ -127,13 +141,12 @@ class HumitidySensor extends IPSModule
                 $hi = $hi * 100.;
             }
         } else {
-            $this->SendDebug('UPDATE', 'Humidity Indoor not set!');
+            $this->SendDebug(__FUNCTION__, 'Humidity Indoor not set!');
             $state = false;
         }
         // All okay
         if ($state == false) {
             $this->SetValueString('Result', $result);
-
             return;
         }
 
@@ -205,55 +218,98 @@ class HumitidySensor extends IPSModule
         $this->SetValue('Hint', $hint);
         $this->SetValue('Difference', $difference);
 
-        $scriptId = $this->ReadPropertyInteger('ScriptMessage');
+        // Threshold
         $threshold = $this->ReadPropertyInteger('MessageThreshold');
-        if ($scriptId != 0 && $hint == true && $difference > $threshold) {
-            $room = $this->ReadPropertyString('RoomName');
-            $time = $this->ReadPropertyInteger('LifeTime');
-            $time = $time * 60;
-            if (IPS_ScriptExists($scriptId)) {
-                if ($time > 0) {
-                    IPS_RunScriptWaitEx(
-                        $scriptId,
-                        ['action'       => 'add', 'text' => $room . ': ' . $result, 'expires' => time() + $time,
-                            'removable' => true, 'type' => 3, 'image' => 'Ventilation', ]
-                    );
-                } else {
-                    IPS_RunScriptWaitEx(
-                        $scriptId,
-                        ['action'       => 'add', 'text' => $room . ': ' . $result,
-                            'removable' => true, 'type' => 3, 'image' => 'Ventilation', ]
-                    );
+        if ($this->ReadPropertyBoolean('CreateThreshold')) {
+            $threshold = $this->GetValue('MessageThreshold');
+        }
+        // Messages
+        if ($hint == true && $difference > $threshold) {
+            $dbMsg = $this->ReadPropertyInteger('DashboardMessage');
+            $wfMsg = $this->ReadPropertyInteger('NotificationMessage');
+            // Send
+            if($dbMsg || $wfMsg) {
+                $scriptId = $this->ReadPropertyInteger('ScriptMessage');
+                $room = $this->ReadPropertyString('RoomName');
+                $time = $this->ReadPropertyInteger('LifeTime');
+                $time = $time * 60;
+                // Dashboard
+                if ($dbMsg && $scriptId != 0 && IPS_ScriptExists($scriptId)) {
+                    if ($time > 0) {
+                        IPS_RunScriptWaitEx(
+                            $scriptId,
+                            ['action'       => 'add', 'text' => $room . ': ' . $result, 'expires' => time() + $time,
+                                'removable' => true, 'type' => 3, 'image' => 'Ventilation', ]
+                        );
+                    } else {
+                        IPS_RunScriptWaitEx(
+                            $scriptId,
+                            ['action'       => 'add', 'text' => $room . ': ' . $result,
+                                'removable' => true, 'type' => 3, 'image' => 'Ventilation', ]
+                        );
+                    }
+                }
+                // Notification
+                $webfrontId = $this->ReadPropertyInteger('InstanceWebfront');
+                if ($wfMsg && $webfrontId != 0) {
+                    WFC_PushNotification($webfrontId, $this->Translate('Ventilation note'), $room . ': ' . $result, 'Ventilation', 0);
                 }
             }
         }
     }
 
     /**
-     * This function will be available automatically after the module is imported with the module control.
-     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:.
+     * RequestAction.
      *
-     * TSH_Duration($id, $duration);
-     *
-     * @param int $duration Wartezeit einstellen.
+     *  @param string $ident Ident.
+     *  @param string $value Value.
      */
-    public function Duration(int $duration)
+    public function RequestAction($ident, $value)
     {
-        IPS_SetProperty($this->InstanceID, 'UpdateTimer', $duration);
-        IPS_ApplyChanges($this->InstanceID);
+        // Debug output
+        $this->SendDebug(__FUNCTION__, $ident . ' => ' . $value);
+        // Ident == OnXxxxxYyyyy
+        switch ($ident) {
+            case 'MessageThreshold':
+                $this->SetValueInteger($ident, $value);
+            break;
+        }
+        //return true;
     }
 
     /**
-     * This function will be available automatically after the module is imported with the module control.
-     * Using the custom prefix this function will be callable from PHP and JSON-RPC through:.
+     * Update a boolean value.
      *
-     * TSH_SetMessageThreshold($id, $threshold);
-     *
-     * @param int MessageThreshold Schwellert einstellen.
+     * @param string $ident Ident of the boolean variable
+     * @param bool   $value Value of the boolean variable
      */
-    public function MessageThreshold(int $threshold)
+    private function SetValueBoolean(string $ident, bool $value)
     {
-        IPS_SetProperty($this->InstanceID, 'MessageThreshold', $threshold);
-        IPS_ApplyChanges($this->InstanceID);
+        $id = $this->GetIDForIdent($ident);
+        SetValueBoolean($id, $value);
+    }
+
+    /**
+     * Update a string value.
+     *
+     * @param string $ident Ident of the string variable
+     * @param string $value Value of the string variable
+     */
+    private function SetValueString(string $ident, string $value)
+    {
+        $id = $this->GetIDForIdent($ident);
+        SetValueString($id, $value);
+    }
+
+    /**
+     * Update a integer value.
+     *
+     * @param string $ident Ident of the integer variable
+     * @param int    $value Value of the integer variable
+     */
+    private function SetValueInteger(string $ident, int $value)
+    {
+        $id = $this->GetIDForIdent($ident);
+        SetValueInteger($id, $value);
     }
 }
