@@ -228,7 +228,7 @@ class HumitidySensor extends IPSModule
             $dbMsg = $this->ReadPropertyInteger('DashboardMessage');
             $wfMsg = $this->ReadPropertyInteger('NotificationMessage');
             // Send
-            if($dbMsg || $wfMsg) {
+            if ($dbMsg || $wfMsg) {
                 $scriptId = $this->ReadPropertyInteger('ScriptMessage');
                 $room = $this->ReadPropertyString('RoomName');
                 $time = $this->ReadPropertyInteger('LifeTime');
