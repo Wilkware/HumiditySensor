@@ -1,9 +1,12 @@
 {
-  "id": "{55168629-A711-064D-4106-3168DAEC466E}",
-  "author": "Wilkware (@Pitti)",
-  "name": "Toolmatic Humitidy Sensor",
-  "url": "https://github.com/Wilkware",
-  "version": "2.0",
-  "build": 20210706,
-  "date": 1625565600
+    "id": "{55168629-A711-064D-4106-3168DAEC466E}",
+    "name": "Toolmatic Humitidy Sensor",
+    "author": "Wilkware (@Pitti)",
+    "url": "https://wilkware.de/",
+    "compatibility": {
+        "version": "6.0"
+    },
+    "version": "3.0",
+    "build": 20221204,
+    "date": 1670151600
 }
