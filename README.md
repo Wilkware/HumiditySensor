@@ -4,7 +4,7 @@
 [![Product](https://img.shields.io/badge/Symcon%20Version-6.0-blue.svg)](https://www.symcon.de/produkt/)
 [![Version](https://img.shields.io/badge/Modul%20Version-3.0.20221204-orange.svg)](https://github.com/Wilkware/IPSymconHumiditySensor)
 [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-[![Actions](https://github.com/Wilkware/IPSymconHumiditySensor/workflows/Check%20Style/badge.svg)](https://github.com/Wilkware/IPSymconHumiditySensor/actions)
+[![Actions](https://github.com/Wilkware/IPSymconHumiditySensor/workflows/Check%20Style/badge.svg)](https://github.com/Wilkware/HumiditySensor/actions)
 
 Das Modul Luftfeuchtigkeitssensor (Humitidy Sensor) berechnet anhand der Innen- und Aussentemperatur, sowie der Innen- und Aussenluftfeuchtigkeit den Wassergehalt der Luft, den Taupunkt und ermittelt so ob ein Lüften des Raumes von Vorteil wäre.
 
