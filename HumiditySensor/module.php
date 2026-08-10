@@ -2,17 +2,167 @@
 
 declare(strict_types=1);
 
-// Allgemeine Funktionen
+/** Generell funktions  */
 require_once __DIR__ . '/../libs/_traits.php';
 
-// CLASS HumitidySensor
-class HumitidySensor extends IPSModule
-{
-    use DebugHelper;
-    use ProfileHelper;
-    use VariableHelper;
+/** Namespaced traits */
+use Wilkware\HumiditySensor\DebugHelper;
+use Wilkware\HumiditySensor\EventHelper;
+use Wilkware\HumiditySensor\VariableHelper;
+use Wilkware\HumiditySensor\VersionHelper;
 
-    public function Create()
+/**
+ *  CLASS HumiditySensor
+ */
+class HumiditySensor extends IPSModuleStrict
+{
+    // -------------------------------------------------------------------------
+    // Traits
+    // -------------------------------------------------------------------------
+
+    use DebugHelper;
+    use EventHelper;
+    use VariableHelper;
+    use VersionHelper;
+
+    // -------------------------------------------------------------------------
+    // Presentations
+    // -------------------------------------------------------------------------
+
+    /**
+     * @var array<string,mixed> AirOrNot Hint Presentation (Value)
+     */
+    private const THS_PRESENTATION_AIR_OR_NOT = [
+        'USAGE_TYPE'          => 0,
+        'THOUSANDS_SEPARATOR' => '',
+        'SHOW_PREVIEW'        => true,
+        'PRESENTATION'        => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+        'SUFFIX'              => '',
+        'COLOR'               => -1,
+        'PREFIX'              => '',
+        'CONTENT_COLOR'       => -1,
+        'MAX'                 => 100,
+        'MULTILINE'           => false,
+        'DECIMAL_SEPARATOR'   => 'Client',
+        'PERCENTAGE'          => false,
+        'DIGITS'              => 2,
+        'INTERVALS'           => '[]',
+        'DISPLAY_TYPE'        => 0,
+        'ICON'                => 'window-frame',
+        'INTERVALS_ACTIVE'    => false,
+        'PREVIEW_STYLE'       => 1,
+        'MIN'                 => 0,
+        'OPTIONS'             => '[{"ColorDisplay":5810438,"ContentColorDisplay":-1,"Value":false,"Caption":"Don\'t ventilate!","IconActive":true,"IconValue":"window-frame","ColorActive":true,"ColorValue":5810438,"ContentColorActive":false,"ContentColorValue":-1},{"ColorDisplay":15948332,"ContentColorDisplay":-1,"Value":true,"Caption":"Ventilate!","IconActive":true,"IconValue":"window-frame-open","ColorActive":true,"ColorValue":15948332,"ContentColorActive":false,"ContentColorValue":-1}]',
+    ];
+
+    /**
+     * @var array<string,mixed> Water Content Presentation (Value)
+     */
+    private const THS_PRESENTATION_WATER_CONTENT = [
+        'USAGE_TYPE'          => 0,
+        'THOUSANDS_SEPARATOR' => '',
+        'SHOW_PREVIEW'        => true,
+        'PRESENTATION'        => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+        'SUFFIX'              => ' g/m³',
+        'COLOR'               => 8421504,
+        'MAX'                 => 0,
+        'MULTILINE'           => false,
+        'DECIMAL_SEPARATOR'   => 'Client',
+        'PERCENTAGE'          => false,
+        'DIGITS'              => 2,
+        'INTERVALS'           => '[]',
+        'DISPLAY_TYPE'        => 0,
+        'ICON'                => 'raindrops',
+        'INTERVALS_ACTIVE'    => false,
+        'PREVIEW_STYLE'       => 1,
+        'MIN'                 => 0,
+        'CONTENT_COLOR'       => -1,
+        'PREFIX'              => '',
+    ];
+
+    /**
+     * @var array<string,mixed> Presentation (Value) for the temperature
+     */
+    private const THS_PRESENTATION_TEMPERATURE = [
+        'USAGE_TYPE'          => 1,
+        'THOUSANDS_SEPARATOR' => '',
+        'SHOW_PREVIEW'        => true,
+        'PRESENTATION'        => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+        'SUFFIX'              => ' °C',
+        'COLOR'               => -1,
+        'MAX'                 => 70,
+        'MULTILINE'           => false,
+        'DECIMAL_SEPARATOR'   => 'Client',
+        'PERCENTAGE'          => false,
+        'DIGITS'              => 1,
+        'INTERVALS'           => '[]',
+        'DISPLAY_TYPE'        => 0,
+        'ICON'                => 'temperature-full',
+        'INTERVALS_ACTIVE'    => false,
+        'PREVIEW_STYLE'       => 1,
+        'MIN'                 => -30,
+        'CONTENT_COLOR'       => -1,
+        'PREFIX'              => '',
+    ];
+
+    /**
+     * @var array<string,mixed> Presentation (Value) for the difference between indoor and outdoor water content
+     */
+    private const THS_PRESENTATION_DIFFERENCE = [
+        'USAGE_TYPE'          => 0,
+        'THOUSANDS_SEPARATOR' => '',
+        'SHOW_PREVIEW'        => true,
+        'PRESENTATION'        => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+        'SUFFIX'              => ' %',
+        'COLOR'               => -1,
+        'MAX'                 => 0,
+        'MULTILINE'           => false,
+        'DECIMAL_SEPARATOR'   => 'Client',
+        'PERCENTAGE'          => false,
+        'DIGITS'              => 2,
+        'INTERVALS'           => '[{"ColorDisplay":32768,"ContentColorDisplay":-1,"IntervalMinValue":-500,"IntervalMaxValue":0.01,"ConstantActive":false,"ConstantValue":"%.2f %%","ConversionFactor":1,"IconActive":true,"IconValue":"window-frame-open","PrefixActive":false,"PrefixValue":"","SuffixActive":false,"SuffixValue":"","DigitsActive":true,"DigitsValue":2,"ColorActive":true,"ColorValue":32768,"ContentColorActive":false,"ContentColorValue":-1},{"ColorDisplay":8388608,"ContentColorDisplay":-1,"IntervalMinValue":0.01,"IntervalMaxValue":500,"ConstantActive":false,"ConstantValue":"+%.2f %%","ConversionFactor":1,"IconActive":true,"IconValue":"window-frame","PrefixActive":false,"PrefixValue":"","SuffixActive":false,"SuffixValue":"","DigitsActive":true,"DigitsValue":2,"ColorActive":true,"ColorValue":8388608,"ContentColorActive":false,"ContentColorValue":-1}]',
+        'DISPLAY_TYPE'        => 0,
+        'ICON'                => 'plus-minus',
+        'INTERVALS_ACTIVE'    => true,
+        'PREVIEW_STYLE'       => 1,
+        'MIN'                 => 0,
+        'CONTENT_COLOR'       => -1,
+        'PREFIX'              => '',
+    ];
+
+    /**
+     * @var array<string,mixed> Threshold Presentation (Slider)
+     */
+    private const THS_PRESENTATION_THRESHOLD = [
+        'USAGE_TYPE'          => 5,
+        'THOUSANDS_SEPARATOR' => '',
+        'DECIMAL_SEPARATOR'   => 'Client',
+        'PERCENTAGE'          => false,
+        'DIGITS'              => 0,
+        'INTERVALS'           => '[]',
+        'ICON'                => 'faucet-drip',
+        'INTERVALS_ACTIVE'    => false,
+        'MAX'                 => 250,
+        'GRADIENT_TYPE'       => 0,
+        'MIN'                 => 0,
+        'CUSTOM_GRADIENT'     => '[]',
+        'PREFIX'              => '',
+        'PRESENTATION'        => VARIABLE_PRESENTATION_SLIDER,
+        'STEP_SIZE'           => 10.0,
+        'SUFFIX'              => '+ %',
+    ];
+
+    // -------------------------------------------------------------------------
+    // Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * In contrast to Construct, this function is called only once when creating the instance and starting IP-Symcon.
+     * Therefore, status variables and module properties which the module requires permanently should be created here.
+     *
+     * @return void
+     */
+    public function Create(): void
     {
         //Never delete this line!
         parent::Create();
@@ -40,7 +190,23 @@ class HumitidySensor extends IPSModule
         $this->RegisterTimer('UpdateTrigger', 0, "THS_Update(\$_IPS['TARGET']);");
     }
 
-    public function ApplyChanges()
+    /**
+     * This function is called when deleting the instance during operation and when updating via "Module Control".
+     * The function is not called when exiting IP-Symcon.
+     *
+     * @return void
+     */
+    public function Destroy(): void
+    {
+        parent::Destroy();
+    }
+
+    /**
+     * Is executed when "Apply" is pressed on the configuration page and immediately after the instance has been created.
+     *
+     * @return void
+     */
+    public function ApplyChanges(): void
     {
         //Never delete this line!
         parent::ApplyChanges();
@@ -48,45 +214,23 @@ class HumitidySensor extends IPSModule
         // Update Trigger Timer
         $this->SetTimerInterval('UpdateTrigger', 1000 * 60 * $this->ReadPropertyInteger('UpdateTimer'));
 
-        // Profile "THS.AirOrNot"
-        $association = [
-            [0, 'Nicht Lüften!', 'Window-100', 0x00FF00],
-            [1, 'Lüften!', 'Window-0', 0xFF0000],
-        ];
-        $this->RegisterProfile(vtBoolean, 'THS.AirOrNot', 'Window', '', '', 0, 0, 0, 0, $association);
-
-        // Profile "THS.WaterContent"
-        $association = [
-            [0, '%0.2f', '', 0x808080],
-        ];
-        $this->RegisterProfile(vtFloat, 'THS.WaterContent', 'Drops', '', ' g/m³', 0, 0, 0, 0, $association);
-
-        // Profile "THS.Difference"
-        $association = [
-            [-500, '%0.2f %%', 'Window-0', 16711680],
-            [0, '%0.2f %%', 'Window-0', 16711680],
-            [0.01, '+%0.2f %%', 'Window-100', 16744448],
-            [10, '+%0.2f %%', 'Window-100', 32768],
-        ];
-        $this->RegisterProfile(vtFloat, 'THS.Difference', 'Window', '', '', 0, 0, 0, 2, $association);
-        // Profil "THS.Threshold"
-        $this->RegisterProfile(vtInteger, 'THS.Threshold', 'Tap', '', '+ %', 0, 250, 10, 0);
+        $hint = $this->TranslatePresentation(self::THS_PRESENTATION_AIR_OR_NOT, 'OPTIONS', 'Caption');
 
         // Ergebnis & Hinweis & Differenz
-        $this->MaintainVariable('Hint', $this->Translate('Hint'), vtBoolean, 'THS.AirOrNot', 1, true);
-        $this->MaintainVariable('Result', $this->Translate('Result'), vtString, '', 2, true);
-        $this->MaintainVariable('Difference', $this->Translate('Difference'), vtFloat, 'THS.Difference', 3, true);
+        $this->MaintainVariable('Hint', $this->Translate('Hint'), VARIABLETYPE_BOOLEAN, $hint, 1, true);
+        $this->MaintainVariable('Result', $this->Translate('Result'), VARIABLETYPE_STRING, '', 2, true);
+        $this->MaintainVariable('Difference', $this->Translate('Difference'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_DIFFERENCE, 3, true);
         // Taupunkt
         $create = $this->ReadPropertyBoolean('CreateDewPoint');
-        $this->MaintainVariable('DewPointOutdoor', $this->Translate('Dew point outdoor'), vtFloat, '~Temperature', 4, $create);
-        $this->MaintainVariable('DewPointIndoor', $this->Translate('Dew point indoor'), vtFloat, '~Temperature', 5, $create);
+        $this->MaintainVariable('DewPointOutdoor', $this->Translate('Dew point outdoor'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_TEMPERATURE, 4, $create);
+        $this->MaintainVariable('DewPointIndoor', $this->Translate('Dew point indoor'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_TEMPERATURE, 5, $create);
         // Wassergehalt (WaterContent)
         $create = $this->ReadPropertyBoolean('CreateWaterContent');
-        $this->MaintainVariable('WaterContentOutdoor', $this->Translate('Water content outdoor'), vtFloat, 'THS.WaterContent', 6, $create);
-        $this->MaintainVariable('WaterContentIndoor', $this->Translate('Water content indoor'), vtFloat, 'THS.WaterContent', 7, $create);
+        $this->MaintainVariable('WaterContentOutdoor', $this->Translate('Water content outdoor'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_WATER_CONTENT, 6, $create);
+        $this->MaintainVariable('WaterContentIndoor', $this->Translate('Water content indoor'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_WATER_CONTENT, 7, $create);
         // Schwellwert (Threshold)
         $create = $this->ReadPropertyBoolean('CreateThreshold');
-        $this->MaintainVariable('MessageThreshold', $this->Translate('Message threshold'), vtInteger, 'THS.Threshold', 8, $create);
+        $this->MaintainVariable('MessageThreshold', $this->Translate('Message threshold'), VARIABLETYPE_INTEGER, self::THS_PRESENTATION_THRESHOLD, 8, $create);
         if ($create) {
             //$threshold = $this->ReadPropertyInteger('MessageThreshold');
             //$this->SetValueInteger('MessageThreshold', $threshold);
@@ -95,24 +239,49 @@ class HumitidySensor extends IPSModule
     }
 
     /**
+     * Is called when, for example, a button is clicked in the visualization.
+     *
+     * @param string $ident Ident of the variable
+     * @param mixed $value The value to be set
+     *
+     * @return void
+     */
+    public function RequestAction(string $ident, mixed $value): void
+    {
+        // Debug output
+        $this->LogDebug(__FUNCTION__, $ident . ' => ' . $value);
+        // Ident == OnXxxxxYyyyy
+        switch ($ident) {
+            case 'MessageThreshold':
+                $this->SetValueInteger($ident, $value);
+                break;
+        }
+
+    }
+
+    /**
      * This function will be available automatically after the module is imported with the module control.
      * Using the custom prefix this function will be callable from PHP and JSON-RPC through:.
      *
      * THS_Update($id);
+     *
+     * @return void
      */
-    public function Update()
+    public function Update(): void
     {
         $result = 'Ergebnis konnte nicht ermittelt werden!';
         // Daten lesen
         $state = true;
+
         // Temp Outdoor
         $to = $this->ReadPropertyInteger('TempOutdoor');
         if ($to != 0) {
             $to = GetValue($to);
         } else {
-            $this->SendDebug(__FUNCTION__, 'Temperature Outdoor not set!');
+            $this->LogDebug(__FUNCTION__, 'Temperature Outdoor not set!');
             $state = false;
         }
+
         // Humidity Outdoor
         $ho = $this->ReadPropertyInteger('HumyOutdoor');
         if ($ho != 0) {
@@ -122,17 +291,20 @@ class HumitidySensor extends IPSModule
                 $ho = $ho * 100.;
             }
         } else {
-            $this->SendDebug(__FUNCTION__, 'Humidity Outdoor not set!');
+            $this->LogDebug(__FUNCTION__, 'Humidity Outdoor not set!');
             $state = false;
         }
+        $this->LogDebug(__FUNCTION__, 'Outdoor (t/f):' . $to . ' / ' . $ho);
+
         // Temp Indoor
         $ti = $this->ReadPropertyInteger('TempIndoor');
         if ($ti != 0) {
             $ti = GetValue($ti);
         } else {
-            $this->SendDebug(__FUNCTION__, 'Temperature Indoor not set!');
+            $this->LogDebug(__FUNCTION__, 'Temperature Indoor not set!');
             $state = false;
         }
+
         // Humidity Indoor
         $hi = $this->ReadPropertyInteger('HumyIndoor');
         if ($hi != 0) {
@@ -142,9 +314,11 @@ class HumitidySensor extends IPSModule
                 $hi = $hi * 100.;
             }
         } else {
-            $this->SendDebug(__FUNCTION__, 'Humidity Indoor not set!');
+            $this->LogDebug(__FUNCTION__, 'Humidity Indoor not set!');
             $state = false;
         }
+        $this->LogDebug(__FUNCTION__, 'Indoor (t/f):' . $ti . ' / ' . $hi);
+
         // All okay
         if ($state == false) {
             $this->SetValueString('Result', $result);
@@ -152,60 +326,76 @@ class HumitidySensor extends IPSModule
         }
 
         // Minus oder Plus ;-)
-        if ($ti >= 0) {
+        if ($to >= 0) {
             // Plustemperaturen
             $ao = 7.5;
-            $bo = 237.7;
-            $ai = $ao;
-            $bi = $bo;
+            $bo = 237.3;
         } else {
             // Minustemperaturen
             $ao = 7.6;
             $bo = 240.7;
-            $ai = $ao;
-            $bi = $bo;
+        }
+        if ($ti >= 0) {
+            // Plustemperaturen
+            $ai = 7.5;
+            $bi = 237.3;
+        } else {
+            // Minustemperaturen
+            $ai = 7.6;
+            $bi = 240.7;
         }
 
         // universelle Gaskonstante in J/(kmol*K)
         $rg = 8314.3;
+
         // Molekulargewicht des Wasserdampfes in kg
         $m = 18.016;
+
         // Umrechnung in Kelvin
         $ko = $to + 273.15;
         $ki = $ti + 273.15;
+
         // Berechnung Sättigung Dampfdruck in hPa
         $so = 6.1078 * pow(10, (($ao * $to) / ($bo + $to)));
         $si = 6.1078 * pow(10, (($ai * $ti) / ($bi + $ti)));
+
         // Dampfdruck in hPa
         $do = ($ho / 100) * $so;
         $di = ($hi / 100) * $si;
+
         // Berechnung Taupunkt Aussen
         $vo = log10($do / 6.1078);
         $dpo = $bo * $vo / ($ao - $vo);
+
         // Berechnung Taupunkt Innen
         $vi = log10($di / 6.1078);
         $dpi = $bi * $vi / ($ai - $vi);
+
         // Speichern Taupunkt?
         $update = $this->ReadPropertyBoolean('CreateDewPoint');
         if ($update == true) {
             $this->SetValue('DewPointOutdoor', $dpo);
             $this->SetValue('DewPointIndoor', $dpi);
         }
-        // WaterContent
+
+        // absolute Feuchtigkeit (Water Content)
         $wco = pow(10, 5) * $m / $rg * $do / $ko;
         $wci = pow(10, 5) * $m / $rg * $di / $ki;
+        $this->LogDebug(__FUNCTION__, 'Absolute Feuchtigkeit (i/a):' . $wci . '/' . $wco);
+
         // Speichern Wassergehalt?
         $update = $this->ReadPropertyBoolean('CreateWaterContent');
         if ($update == true) {
             $this->SetValue('WaterContentOutdoor', $wco);
             $this->SetValue('WaterContentIndoor', $wci);
         }
+
         // Result (diff out / in)
         $wc = $wco - $wci;
         $wcy = ($wci / $wco) * 100;
         $difference = round(($wcy - 100) * 100) / 100;
         if ($wc >= 0) {
-            $difference = round((100 - $wcy) * 100) / 100;
+            //$difference = round((100 - $wcy) * 100) / 100; // nur postive Differenzen?
             $result = 'Lüften führt nicht zur Trocknung der Innenraumluft.';
             $hint = false;
         } elseif ($wcy <= 110) {
@@ -215,15 +405,73 @@ class HumitidySensor extends IPSModule
             $result = 'Lüften führt zur Trocknung der Innenraumluft!';
             $hint = true;
         }
+        /*
+                $this->SetValue('Result', $result);
+                $this->SetValue('Hint', $hint);
+         */
+        $this->SetValue('Difference', $difference);
+
+        // Umrechnung der Feuchtigkeit Innen
+        $iu = round($ho * pow(10, (($ao * $to) / ($bo + $to))) / pow(10, (($ai * $ti) / ($bi + $ti))) * ($ki) / ($ko), 0);
+        $this->LogDebug(__FUNCTION__, 'Umrechnung:' . $iu . '%');
+        $hin = round(0.25 * $hi + 0.75 * $iu, 0);
+        $this->LogDebug(__FUNCTION__, 'Neue Innenfeuchtigkeit:' . $hin . '%');
+
+        if (abs($wci - $wco) <= 0.5) {
+            $hint = false;
+            $result = 'Etwa gleiche Feuchtigkeiten innen und außen!';
+        }
+        elseif ($wci > $wco && $ti > $to) {
+            $hint = true;
+            $result = 'Lüften!!';
+        }
+        elseif ($wci > $wco && $ti <= $to) {
+            $hint = true;
+            $result = 'Lüften möglich, aber es wird dadurch wärmer!!';
+        }
+        elseif ($hin <= 55) {
+            // Wichtig ist, dass die relative Luftfeuchtigkeit in einem Bereich von 40 bis maximal 60 % liegen sollte,
+            // mit der Tendenz, dass je höher die Temperatur ist, bestimmte Luftfeuchten nicht überschritten werden sollten:
+            // Bei 20 °C (80%), 22 °C (70%), 24 °C (62%) und 26 °C (55%), um nur einige Beispiele zu nennen.
+            // Behaglichkeitsbereich des Menschen: zwischen 45 % und maximal 55 %.
+            $hint = true;
+            $delta = $hin - $hi;
+            if ($delta <= 5) {
+                $viel = 'etwas';
+            }
+            else {
+                $viel = 'viel';
+            }
+            $result = "Kurzes Lüften möglich, aber es wird dadurch $viel feuchter (ist aber bis 50-60% OK)";
+        }
+        elseif ($hin <= 65) {
+            // Wichtig ist, dass die relative Luftfeuchtigkeit in einem Bereich von 40 bis maximal 60 % liegen sollte,
+            // mit der Tendenz, dass je höher die Temperatur ist, bestimmte Luftfeuchten nicht überschritten werden sollten:
+            // Bei 20 °C (80%), 22 °C (70%), 24 °C (62%) und 26 °C (55%), um nur einige Beispiele zu nennen.
+            $hint = true;
+            $delta = $hin - $hi;
+            if ($delta <= 5) {
+                $viel = 'etwas';
+            }
+            else {
+                $viel = 'viel';
+            }
+            $result = "Sehr kurzes Lüften möglich, aber es wird dadurch $viel feuchter (ist aber bis 60% noch akzeptabel)";
+        }
+        else {
+            $hint = false;
+            $result = 'NICHT lüften!';
+        }
+        $this->LogDebug(__FUNCTION__, $result);
         $this->SetValue('Result', $result);
         $this->SetValue('Hint', $hint);
-        $this->SetValue('Difference', $difference);
 
         // Threshold
         $threshold = $this->ReadPropertyInteger('MessageThreshold');
         if ($this->ReadPropertyBoolean('CreateThreshold')) {
             $threshold = $this->GetValue('MessageThreshold');
         }
+
         // Messages
         if ($hint == true && $difference > $threshold) {
             $dbMsg = $this->ReadPropertyInteger('DashboardMessage');
@@ -253,28 +501,14 @@ class HumitidySensor extends IPSModule
                 // Notification
                 $webfrontId = $this->ReadPropertyInteger('InstanceWebfront');
                 if ($wfMsg && $webfrontId != 0) {
-                    WFC_PushNotification($webfrontId, $this->Translate('Ventilation note'), $room . ': ' . $result, 'Ventilation', 0);
+                    if ($this->IsWebFrontVisuInstance($webfrontId)) {
+                        WFC_PushNotification($webfrontId, $this->Translate('Ventilation note'), $room . ': ' . $result, 'turn', 0);
+                    }
+                    if ($this->IsTileVisuInstance($webfrontId)) {
+                        VISU_PostNotificationEx($webfrontId, $this->Translate('Ventilation note'), $room . ': ' . $result, 'Ventilation', 'turn', 0);
+                    }
                 }
             }
         }
-    }
-
-    /**
-     * RequestAction.
-     *
-     *  @param string $ident Ident.
-     *  @param string $value Value.
-     */
-    public function RequestAction($ident, $value)
-    {
-        // Debug output
-        $this->SendDebug(__FUNCTION__, $ident . ' => ' . $value);
-        // Ident == OnXxxxxYyyyy
-        switch ($ident) {
-            case 'MessageThreshold':
-                $this->SetValueInteger($ident, $value);
-                break;
-        }
-        //return true;
     }
 }

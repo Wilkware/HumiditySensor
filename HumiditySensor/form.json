@@ -169,12 +169,16 @@
                 {
                     "type": "SelectInstance",
                     "name": "InstanceWebfront",
-                    "caption": "WebFront Instance:",
+                    "caption": "Visualization Instance:",
+                    "validModules": [
+                        "{3565B1F2-8F7B-4311-A4B6-1BF1D868F39E}",
+                        "{B5B875BB-9B76-45FD-4E67-2607E45B3AC4}"
+                    ],
                     "width": "450px"
                 },
                 {
                     "type": "Label",
-                    "caption": "... to use the dashboard message script. More information you get in the forum to thema: Meldungsanzeige im WebFront:"
+                    "caption": "... to use the dashboard message script. More information you get in the forum to thema: \"Meldungsanzeige im WebFront\"."
                 },
                 {
                     "type": "SelectScript",

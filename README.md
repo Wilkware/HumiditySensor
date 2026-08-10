@@ -1,10 +1,10 @@
 # Luftfeuchtigkeitssensor (Humitidy Sensor)
 
 [![Version](https://img.shields.io/badge/Symcon-PHP--Modul-red.svg?style=flat-square)](https://www.symcon.de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/)
-[![Product](https://img.shields.io/badge/Symcon%20Version-6.0-blue.svg?style=flat-square)](https://www.symcon.de/produkt/)
-[![Version](https://img.shields.io/badge/Modul%20Version-3.0.20221204-orange.svg?style=flat-square)](https://github.com/Wilkware/IPSymconHumiditySensor)
+[![Product](https://img.shields.io/badge/Symcon%20Version-6.4-blue.svg?style=flat-square)](https://www.symcon.de/produkt/)
+[![Version](https://img.shields.io/badge/Modul%20Version-3.0.20221204-orange.svg?style=flat-square)](https://github.com/Wilkware/HumiditySensor)
 [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-[![Actions](https://img.shields.io/github/actions/workflow/status/wilkware/HumiditySensor/style.yml?branch=main&label=CheckStyle&style=flat-square)](https://github.com/Wilkware/HumiditySensor/actions)
+[![Actions](https://img.shields.io/github/actions/workflow/status/wilkware/HumiditySensor/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/Wilkware/HumiditySensor/actions)
 
 Das Modul Luftfeuchtigkeitssensor (Humitidy Sensor) berechnet anhand der Innen- und Aussentemperatur, sowie der Innen- und Aussenluftfeuchtigkeit den Wassergehalt der Luft, den Taupunkt und ermittelt so ob ein Lüften des Raumes von Vorteil wäre.
 
@@ -13,9 +13,9 @@ Das Modul Luftfeuchtigkeitssensor (Humitidy Sensor) berechnet anhand der Innen- 
 1. [Funktionsumfang](#user-content-1-funktionsumfang)
 2. [Voraussetzungen](#user-content-2-voraussetzungen)
 3. [Installation](#user-content-3-installation)
-4. [Einrichten der Instanzen in IP-Symcon](#user-content-4-einrichten-der-instanzen-in-ip-symcon)
-5. [Statusvariablen und Profile](#user-content-5-statusvariablen-und-profile)
-6. [WebFront](#user-content-6-webfront)
+4. [Einrichten der Instanzen](#user-content-4-einrichten-der-instanzen)
+5. [Statusvariablen und Darstellungen](#user-content-5-statusvariablen-und-darstellungen)
+6. [Visualisierung](#user-content-6-visualisierung)
 7. [PHP-Befehlsreferenz](#user-content-7-php-befehlsreferenz)
 8. [Versionshistorie](#user-content-8-versionshistorie)
 
@@ -30,15 +30,15 @@ Das Modul Luftfeuchtigkeitssensor (Humitidy Sensor) berechnet anhand der Innen- 
 
 ### 2. Voraussetzungen
 
-* IP-Symcon ab Version 6.0
+* IP-Symcon ab Version 6.4
 
 ### 3. Installation
 
 * Über den Modul Store das Modul _Luftfeuchtigkeitsssensor_ installieren.
 * Alternativ Über das Modul-Control folgende URL hinzufügen.  
-`https://github.com/Wilkware/IPSymconHumitidySensor` oder `git://github.com/Wilkware/IPSymconHumitidySensor.git`
+`https://github.com/Wilkware/HumiditySensor` oder `git://github.com/Wilkware/HumiditySensor.git`
 
-### 4. Einrichten der Instanzen in IP-Symcon
+### 4. Einrichten der Instanzen
 
 * Unter 'Instanz hinzufügen' ist das _Luftfeuchtigkeitsssensor_-Modul (Alias: _Luftfeuchtigkeitsrechner_) unter dem Hersteller _'(Geräte)'_ aufgeführt.
 
@@ -76,7 +76,7 @@ Checkbox Taupunkt             | Frage, ob die Variablen für Taupunkte angelegt 
 Checkbox Wassergehalt         | Frage, ob die Variablen für Wassergehalte angelegt werden sollen.
 Checkbox Zustandsvariable     | Frage, ob eine Statusvariable für das Einstellen des Schwellwertes angelegt werden soll.
 
-### 5. Statusvariablen und Profile
+### 5. Statusvariablen und Darstellungen
 
 Die Statusvariablen/Timer werden automatisch angelegt. Das Löschen einzelner kann zu Fehlfunktionen führen.
 
@@ -88,7 +88,7 @@ Taupunkt Aussen      | Float     | Taupunkt der Aussenluft
 Taupunkt Innen       | Float     | Taupunkt der Innenluft
 Ergebnis             | String    | Zusammenfassung des Berechnungsergebnisses
 Hinweis              | Boolean   | Hinweis ob Lüften oder nicht!
-Differenz            | Float     | Differenz der Luftfeute zwischen Aussen und Innen  [+]=Innen feuchter, [-]=Aussen feuchter
+Differenz            | Float     | Differenz der Luftfeuchte zwischen Aussen und Innen  [+]=Innen feuchter, [-]=Aussen feuchter
 Schwellwert          | Integer   | Offset der auf den realen Wert addiert wird und somit eine Meldung zum Lüften "verzögert"
 
 Folgende Profile werden angelegt:
@@ -100,9 +100,9 @@ THS.WaterContent     | Float     | Wassergehalt der Luft in g/m³
 THS.AirOrNot         | Boolaen   | Lüften (true) oder Nicht (false)
 THS.Threshold        | Integer   | Prozentualer Offsetwert für Meldungsverzögerung (0 - 250 in 10er Schritten)
 
-### 6. WebFront
+### 6. Visualisierung
 
-Die erzeugten Variablen können direkt ins Webfront verlingt werden.  
+Die erzeugten Variablen können direkt in die Visualisierung verlingt werden.  
 
 ### 7. PHP-Befehlsreferenz
 

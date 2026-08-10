@@ -1,10 +1,10 @@
 {
     "id": "{55168629-A711-064D-4106-3168DAEC466E}",
-    "name": "Toolmatic Humitidy Sensor",
+    "name": "Humitidy Sensor",
     "author": "Wilkware (@Pitti)",
-    "url": "https://wilkware.de/",
+    "url": "https://wilkware.de",
     "compatibility": {
-        "version": "6.0"
+        "version": "6.4"
     },
     "version": "3.0",
     "build": 20221204,

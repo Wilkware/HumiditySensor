@@ -1,11 +1,11 @@
 {
     "id": "{B4F9A13F-13F3-FA6D-6745-4DB513A13B25}",
-    "name": "Humitidy Sensor",
+    "name": "Humidity Sensor",
+    "url": "https://wilkware.de/ip-symcon-module/luftfeuchtigkeitssensor/",
     "type": 3,
     "vendor": "",
     "aliases": [
-        "Luftfeuchtigkeitssensor",
-        "Luftfeuchtigkeitsrechner"
+        "Humidity Calculator"
     ],
     "parentRequirements": [],
     "childRequirements": [],
