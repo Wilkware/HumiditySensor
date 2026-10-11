@@ -33,101 +33,43 @@ class HumiditySensor extends IPSModuleStrict
      * @var array<string,mixed> AirOrNot Hint Presentation (Value)
      */
     private const THS_PRESENTATION_AIR_OR_NOT = [
-        'USAGE_TYPE'          => 0,
-        'THOUSANDS_SEPARATOR' => '',
-        'SHOW_PREVIEW'        => true,
-        'PRESENTATION'        => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-        'SUFFIX'              => '',
-        'COLOR'               => -1,
-        'PREFIX'              => '',
-        'CONTENT_COLOR'       => -1,
-        'MAX'                 => 100,
-        'MULTILINE'           => false,
-        'DECIMAL_SEPARATOR'   => 'Client',
-        'PERCENTAGE'          => false,
-        'DIGITS'              => 2,
-        'INTERVALS'           => '[]',
-        'DISPLAY_TYPE'        => 0,
-        'ICON'                => 'window-frame',
-        'INTERVALS_ACTIVE'    => false,
-        'PREVIEW_STYLE'       => 1,
-        'MIN'                 => 0,
-        'OPTIONS'             => '[{"ColorDisplay":5810438,"ContentColorDisplay":-1,"Value":false,"Caption":"Don\'t ventilate!","IconActive":true,"IconValue":"window-frame","ColorActive":true,"ColorValue":5810438,"ContentColorActive":false,"ContentColorValue":-1},{"ColorDisplay":15948332,"ContentColorDisplay":-1,"Value":true,"Caption":"Ventilate!","IconActive":true,"IconValue":"window-frame-open","ColorActive":true,"ColorValue":15948332,"ContentColorActive":false,"ContentColorValue":-1}]',
+        'ICON'         => 'window-frame',
+        'OPTIONS'      => '[{"Value":false,"Caption":"Don\'t ventilate!","IconActive":true,"IconValue":"window-frame","ColorActive":true,"ColorValue":5810438,"ContentColorActive":false,"ContentColorValue":-1},{"Value":true,"Caption":"Ventilate!","IconActive":true,"IconValue":"window-frame-open","ColorActive":true,"ColorValue":15948332,"ContentColorActive":false,"ContentColorValue":-1}]',
+        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
     ];
 
     /**
      * @var array<string,mixed> Water Content Presentation (Value)
      */
     private const THS_PRESENTATION_WATER_CONTENT = [
-        'USAGE_TYPE'          => 0,
-        'THOUSANDS_SEPARATOR' => '',
-        'SHOW_PREVIEW'        => true,
-        'PRESENTATION'        => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-        'SUFFIX'              => ' g/m³',
-        'COLOR'               => 8421504,
-        'MAX'                 => 0,
-        'MULTILINE'           => false,
-        'DECIMAL_SEPARATOR'   => 'Client',
-        'PERCENTAGE'          => false,
-        'DIGITS'              => 2,
-        'INTERVALS'           => '[]',
-        'DISPLAY_TYPE'        => 0,
-        'ICON'                => 'raindrops',
-        'INTERVALS_ACTIVE'    => false,
-        'PREVIEW_STYLE'       => 1,
-        'MIN'                 => 0,
-        'CONTENT_COLOR'       => -1,
-        'PREFIX'              => '',
+        'COLOR'        => 8421504,
+        'DIGITS'       => 2,
+        'ICON'         => 'raindrops',
+        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+        'SUFFIX'       => ' g/m³',
     ];
 
     /**
      * @var array<string,mixed> Presentation (Value) for the temperature
      */
     private const THS_PRESENTATION_TEMPERATURE = [
-        'USAGE_TYPE'          => 1,
-        'THOUSANDS_SEPARATOR' => '',
-        'SHOW_PREVIEW'        => true,
-        'PRESENTATION'        => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-        'SUFFIX'              => ' °C',
-        'COLOR'               => -1,
-        'MAX'                 => 70,
-        'MULTILINE'           => false,
-        'DECIMAL_SEPARATOR'   => 'Client',
-        'PERCENTAGE'          => false,
-        'DIGITS'              => 1,
-        'INTERVALS'           => '[]',
-        'DISPLAY_TYPE'        => 0,
-        'ICON'                => 'temperature-full',
-        'INTERVALS_ACTIVE'    => false,
-        'PREVIEW_STYLE'       => 1,
-        'MIN'                 => -30,
-        'CONTENT_COLOR'       => -1,
-        'PREFIX'              => '',
+        'DIGITS'       => 1,
+        'ICON'         => 'temperature-full',
+        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+        'SUFFIX'       => ' °C',
+        'USAGE_TYPE'   => 1,
     ];
 
     /**
      * @var array<string,mixed> Presentation (Value) for the difference between indoor and outdoor water content
      */
     private const THS_PRESENTATION_DIFFERENCE = [
-        'USAGE_TYPE'          => 0,
-        'THOUSANDS_SEPARATOR' => '',
-        'SHOW_PREVIEW'        => true,
-        'PRESENTATION'        => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-        'SUFFIX'              => ' %',
-        'COLOR'               => -1,
-        'MAX'                 => 0,
-        'MULTILINE'           => false,
-        'DECIMAL_SEPARATOR'   => 'Client',
-        'PERCENTAGE'          => false,
-        'DIGITS'              => 2,
-        'INTERVALS'           => '[{"ColorDisplay":32768,"ContentColorDisplay":-1,"IntervalMinValue":-500,"IntervalMaxValue":0.01,"ConstantActive":false,"ConstantValue":"%.2f %%","ConversionFactor":1,"IconActive":true,"IconValue":"window-frame-open","PrefixActive":false,"PrefixValue":"","SuffixActive":false,"SuffixValue":"","DigitsActive":true,"DigitsValue":2,"ColorActive":true,"ColorValue":32768,"ContentColorActive":false,"ContentColorValue":-1},{"ColorDisplay":8388608,"ContentColorDisplay":-1,"IntervalMinValue":0.01,"IntervalMaxValue":500,"ConstantActive":false,"ConstantValue":"+%.2f %%","ConversionFactor":1,"IconActive":true,"IconValue":"window-frame","PrefixActive":false,"PrefixValue":"","SuffixActive":false,"SuffixValue":"","DigitsActive":true,"DigitsValue":2,"ColorActive":true,"ColorValue":8388608,"ContentColorActive":false,"ContentColorValue":-1}]',
-        'DISPLAY_TYPE'        => 0,
-        'ICON'                => 'plus-minus',
-        'INTERVALS_ACTIVE'    => true,
-        'PREVIEW_STYLE'       => 1,
-        'MIN'                 => 0,
-        'CONTENT_COLOR'       => -1,
-        'PREFIX'              => '',
+        'DIGITS'           => 2,
+        'ICON'             => 'plus-minus',
+        'INTERVALS'        => '[{"IntervalMinValue":-500,"IntervalMaxValue":0.01,"ConstantActive":false,"ConstantValue":"%.2f %%","ConversionFactor":1,"IconActive":true,"IconValue":"window-frame-open","PrefixActive":false,"PrefixValue":"","SuffixActive":false,"SuffixValue":"","DigitsActive":true,"DigitsValue":2,"ColorActive":true,"ColorValue":32768,"ContentColorActive":false,"ContentColorValue":-1},{"IntervalMinValue":0.01,"IntervalMaxValue":500,"ConstantActive":false,"ConstantValue":"+%.2f %%","ConversionFactor":1,"IconActive":true,"IconValue":"window-frame","PrefixActive":false,"PrefixValue":"","SuffixActive":false,"SuffixValue":"","DigitsActive":true,"DigitsValue":2,"ColorActive":true,"ColorValue":8388608,"ContentColorActive":false,"ContentColorValue":-1}]',
+        'INTERVALS_ACTIVE' => true,
+        'PRESENTATION'     => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+        'SUFFIX'           => ' %',
     ];
 
     /**
@@ -157,7 +99,7 @@ class HumiditySensor extends IPSModuleStrict
     // -------------------------------------------------------------------------
 
     /**
-     * In contrast to Construct, this function is called only once when creating the instance and starting IP-Symcon.
+     * In contrast to Construct, this function is called only once when creating the instance and starting Symcon.
      * Therefore, status variables and module properties which the module requires permanently should be created here.
      *
      * @return void
@@ -192,7 +134,7 @@ class HumiditySensor extends IPSModuleStrict
 
     /**
      * This function is called when deleting the instance during operation and when updating via "Module Control".
-     * The function is not called when exiting IP-Symcon.
+     * The function is not called when exiting Symcon.
      *
      * @return void
      */

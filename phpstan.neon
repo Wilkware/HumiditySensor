@@ -1,6 +1,6 @@
 parameters:
     level: 6 # 0 is the loosest and 10 is the strictest
-    phpVersion: 80200 # PHP 8.2
+    phpVersion: 80300 # PHP 8.3.0
 
     # Analyse your module directory
     paths:
@@ -19,6 +19,7 @@ parameters:
     ignoreErrors:
         - '#Function VISU_PostNotificationEx not found.#'
         - '#Function WFC_PushNotification not found.#'
+
 
     # Supress ignore errors
     reportUnmatchedIgnoredErrors: false
