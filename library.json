@@ -1,12 +1,12 @@
 {
     "id": "{55168629-A711-064D-4106-3168DAEC466E}",
-    "name": "Humitidy Sensor",
+    "name": "Humidity Sensor",
     "author": "Wilkware (@Pitti)",
     "url": "https://wilkware.de",
     "compatibility": {
-        "version": "6.4"
+        "version": "8.1"
     },
-    "version": "3.0",
-    "build": 20221204,
-    "date": 1670151600
+    "version": "4.0",
+    "build": 20261015,
+    "date": 1792065600
 }

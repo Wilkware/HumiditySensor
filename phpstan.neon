@@ -19,6 +19,8 @@ parameters:
     ignoreErrors:
         - '#Function VISU_PostNotificationEx not found.#'
         - '#Function WFC_PushNotification not found.#'
+        - '#Function AC_GetAggregatedValues not found.#'
+        - '#Function AC_GetLoggingStatus not found.#'
 
 
     # Supress ignore errors

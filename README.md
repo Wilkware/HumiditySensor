@@ -1,15 +1,17 @@
-# Luftfeuchtigkeitssensor (Humitidy Sensor)
+# 💦 Luftfeuchtigkeitssensor (Humidity Sensor)
 
 [![Home](https://img.shields.io/badge/Home-wilkware.de-0b1830.svg?style=flat-square)](https://wilkware.de/module/luftfeuchtigkeitssensor/)
 [![Version](https://img.shields.io/badge/Symcon-PHP--Modul-red.svg?style=flat-square)](https://www.symcon.de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/)
-[![Product](https://img.shields.io/badge/Symcon%20Version-6.4-blue.svg?style=flat-square)](https://www.symcon.de/produkt/)
-[![Version](https://img.shields.io/badge/Modul%20Version-3.0.20221204-orange.svg?style=flat-square)](https://github.com/Wilkware/HumiditySensor)
+[![Product](https://img.shields.io/badge/Symcon%20Version-8.1-blue.svg?style=flat-square)](https://www.symcon.de/produkt/)
+[![Version](https://img.shields.io/badge/Modul%20Version-4.0.20261015-orange.svg?style=flat-square)](https://github.com/Wilkware/HumiditySensor)
 [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![Actions](https://img.shields.io/github/actions/workflow/status/wilkware/HumiditySensor/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/Wilkware/HumiditySensor/actions)
 
-Das Modul Luftfeuchtigkeitssensor (Humitidy Sensor) berechnet anhand der Innen- und Aussentemperatur, sowie der Innen- und Aussenluftfeuchtigkeit den Wassergehalt der Luft, den Taupunkt und ermittelt so ob ein Lüften des Raumes von Vorteil wäre.
+Das Modul Luftfeuchtigkeitssensor (Humidity Sensor) berechnet anhand der Innen- und Außentemperatur sowie der Innen- und Außenluftfeuchtigkeit den Wassergehalt der Luft und den Taupunkt und ermittelt so, ob ein Lüften des Raumes von Vorteil wäre.
 
-## Inhaltverzeichnis
+![Module-Visu](imgs/humidity-sensor.png)
+
+## Inhaltsverzeichnis
 
 1. [Funktionsumfang](#user-content-1-funktionsumfang)
 2. [Voraussetzungen](#user-content-2-voraussetzungen)
@@ -23,16 +25,20 @@ Das Modul Luftfeuchtigkeitssensor (Humitidy Sensor) berechnet anhand der Innen- 
 
 ### 1. Funktionsumfang
 
-* Berechnung des Wassergehaltes der Luft für Innen und Aussen
-* Berechnung des Taupunktes der Luft für Innen und Aussen
-* Berechnet Differenz zwischen Innen- und Aussenluftfeutigkeit
-* Hinweis ob Lüften des Raumes angebracht wäre
-* Liefert textuelle Erklärung für die Entscheidung
-* Möglichkeit sich über Meldungsscript oder Push Notification informieren zu lassen
+* Berechnung des Wassergehaltes (absolute Feuchte) der Luft für innen und außen
+* Berechnung des Taupunktes der Luft für innen und außen
+* Berechnung der Differenz des Wassergehaltes zwischen Innen- und Außenluft
+* Berechnung des Hitzeindex (gefühlte Temperatur) für innen inkl. Warnstufe
+* Bewertung des Raumklimas (Komfortindex) nach der ELV-Komfortanzeige
+* Berechnung der thermischen Behaglichkeit (PMV/PPD) nach ISO 7730
+* Hinweis, ob ein Lüften des Raumes angebracht wäre
+* Textuelle Erklärung für die Entscheidung
+* Eigene, an die Größe angepasste Kachel für die Kachel-Visualisierung mit wählbaren Elementen und Feuchteverlauf aus dem Archiv
+* Benachrichtigung über Meldungsskript (Dashboard) oder Push-Nachricht an die Visualisierung (WebFront oder Kachel-Visualisierung)
 
 ### 2. Voraussetzungen
 
-* Symcon ab Version 6.4
+* Symcon ab Version 8.1
 
 ### 3. Installation
 
@@ -48,52 +54,167 @@ __Konfigurationsseite__:
 
 Einstellungsbereich:
 
-> Klimadaten  ...
+> 🌡️ Klimadaten ...
 
 Name                          | Beschreibung
 ----------------------------- | ---------------------------------
-Außentemperatur               | Temperatur (Außenklima)
-Luftfeuchtigkeit außen        | Luftfeuchigkeit (Außenklima)
-Innentemperatur               | Temperatur (Raumklima)
-Luftfeuchtigkeit innen        | Luftfeuchigkeit (Raumklima)
+Außentemperatur               | Variable mit der Temperatur der Außenluft (°C)
+Luftfeuchtigkeit außen        | Variable mit der relativen Luftfeuchtigkeit der Außenluft (%)
+Innentemperatur               | Variable mit der Temperatur der Raumluft (°C)
+Luftfeuchtigkeit innen        | Variable mit der relativen Luftfeuchtigkeit der Raumluft (%)
 
-> Meldungsverwaltung ...
+__Hinweis:__ Liefert ein Sensor die Luftfeuchtigkeit als Anteil (Float-Variable mit Werten von 0 bis 1), wird der Wert automatisch in Prozent umgerechnet. Sind nicht alle vier Variablen ausgewählt bzw. vorhanden, geht die Instanz in den Fehlerzustand und die Berechnung wird ausgesetzt.
 
-Name                           | Beschreibung
------------------------------- | ---------------------------------
-Meldung an Anzeige senden      | Auswahl ob Eintrag in die Meldungsverwaltung erfolgen soll oder nicht (Ja/Nein)
-Lebensdauer der Nachricht      | Wie lange so die Meldung angezeigt werden?
-Nachricht ans Webfront senden  | Auswahl ob Push-Nachricht gesendet werden soll oder nicht (Ja/Nein)
-Raumname                       | Text zur eindeutigen Zuordnung des Raums
-Differenz(Schwellwert)         | Schwellwert/Offset ab welchen bei Überschreitung bzw. Unterschreitung eine Meldung erfolgen soll; gerade in Wintermonaten wird der Lüftungszustand sehr schnell erreicht
-Meldsungsskript                | Skript ID des Meldungsverwaltungsskripts, weiterführende Infos im Forum: [Meldungsanzeige im Webfront](https://community.symcon.de/t/meldungsanzeige-im-webfront/23473)
-WebFront Instanz               | ID des Webfronts, an welches die Push-Nachrichten gesendet werden soll
+> 🧭 Lüftungslogik ...
 
-> Erweiterte Einstellungen ...
+Name                              | Beschreibung
+--------------------------------- | ---------------------------------
+Aktualisierungszeit               | Aktualisierungszeitraum in Minuten
+Jahreszeit                        | _Immer_: Meldungen ganzjährig; _Heizperiode (automatisch)_: Meldungen nur in der Heizperiode, ermittelt über die geglättete Außentemperatur; _Heizperiode (Kalender)_: Meldungen nur in den gewählten Monaten
+Heizgrenze                        | Nur bei _automatisch_ (bzw. bei _Immer_ mit automatischer Kleidung): Die Außentemperatur wird über ca. 48 Stunden geglättet (wie bei Heizungsreglern). Die Heizperiode beginnt, wenn der geglättete Wert 1 K unter die Heizgrenze fällt, und endet, wenn er 1 K darüber steigt (Standard: 15 °C).
+Beginn / Ende                     | Nur bei _Kalender_: erster und letzter Monat der Heizperiode (Standard: Oktober bis April)
+Variable für Heizperiode anlegen? | Legt eine Statusvariable an, die anzeigt, ob gerade Heizperiode ist (nur bei _automatisch_ oder _Kalender_)
+Raumtyp                           | Belegt die Mindest-Raumfeuchte mit der Obergrenze des typischen Bereichs für diesen Raum vor (siehe Tabelle)
+Mindest-Raumfeuchte               | Meldung nur, wenn die Raumfeuchte mindestens diesen Wert erreicht (Standard: 60 %, 0 = aus)
+Mindest-Differenz Wassergehalt    | Meldung nur, wenn die Raumluft mindestens so viel mehr Wasser enthält als die Außenluft, Lüften also spürbar trocknet (Standard: 1,0 g/m³, 0 = aus)
+Typisches Raumklima               | Übersicht typischer Temperaturen und Luftfeuchten je Raum
 
-Name                                             | Beschreibung
------------------------------------------------- | ---------------------------------
-Aktualisierungszeit           | Aktualisierungszeitraum in Minuten
-Checkbox Taupunkt             | Frage, ob die Variablen für Taupunkte angelegt werden sollen.
-Checkbox Wassergehalt         | Frage, ob die Variablen für Wassergehalte angelegt werden sollen.
-Checkbox Zustandsvariable     | Frage, ob eine Statusvariable für das Einstellen des Schwellwertes angelegt werden soll.
+Typisches Raumklima (Quelle: [getair](https://www.getair.eu/wissen/optimale-luftfeuchtigkeit-so-schuetzen-sie-gesundheit-und-gebaeude/)):
+
+Raum          | Temperatur | Luftfeuchte
+------------- | ---------- | -----------
+Keller        | 10 - 15 °C | 50 - 65 %
+Flur          | 15 - 18 °C | 40 - 60 %
+Küche         | 18 - 20 °C | 50 - 60 %
+Bad           | 20 - 23 °C | 50 - 70 %
+Kinderzimmer  | 20 - 23 °C | 40 - 60 %
+Wohnzimmer    | 20 - 23 °C | 40 - 60 %
+Arbeitszimmer | 20 - 23 °C | 40 - 60 %
+Schlafzimmer  | 17 - 20 °C | 40 - 60 %
+
+__Hinweis:__ Die Variablen _Hinweis_ und _Ergebnis_ werden unabhängig von der Lüftungslogik allein aus den Klimadaten berechnet. Die Lüftungslogik legt nur fest, wann eine Meldung versendet wird. Eine Meldung erfolgt einmalig, sobald die Empfehlung _Lüften_ lautet, die Raumluft feuchter als die Außenluft ist und alle oben gewählten Bedingungen erfüllt sind. Eine erneute Meldung erfolgt erst, nachdem die Bedingungen zwischenzeitlich nicht mehr erfüllt waren. Im Sommer bleibt die Raumfeuchte meist unter der Mindest-Raumfeuchte, sodass keine Meldungen erfolgen.
+
+> 🧍 Thermische Behaglichkeit ...
+
+Name                            | Beschreibung
+------------------------------- | ---------------------------------
+Kleidungsmodus                  | _Fest_: es gilt die gewählte Kleidung; _Automatisch (Heizperiode)_: außerhalb der Heizperiode gilt die Sommer-, in der Heizperiode die Winterkleidung. Die Heizperiode wird wie in der Lüftungslogik eingestellt ermittelt, bei Jahreszeit _Immer_ automatisch über die Heizgrenze.
+Kleidung (Sommer / Winter)      | Nur bei _Automatisch_: Kleidung außerhalb bzw. innerhalb der Heizperiode (Standard: 0,5 bzw. 1,0 clo); für Schlafzimmer jeweils die passende Bettdecke wählen
+Kleidung                        | Nur bei _Fest_: Wärmedämmung der Kleidung in clo: Kurze Hose, T-Shirt (0,3), Leichte Sommerkleidung (0,5), Lange Hose, Langarmhemd (0,7 – Standard), Hose, Hemd, Pullover (1,0), Warme Hauskleidung (1,3), Bett mit leichter Decke (1,5), Bett mit Bettdecke (2,0)
+Tätigkeit                       | Energieumsatz in met: Schlafen (0,8), Sitzend, entspannt (1,0), Sitzende Tätigkeit (1,2 – Standard), Stehend, leichte Tätigkeit (1,6), Mittelschwere Tätigkeit (2,0)
+Luftgeschwindigkeit             | Ruhende Luft (0,1 m/s – Standard), Leichter Luftzug (0,2 m/s), Spürbarer Luftzug (0,3 m/s), Ventilator (0,5 m/s)
+Strahlungstemperatur (optional) | Variable mit der mittleren Strahlungstemperatur (z. B. Globe-Thermometer oder Wandtemperatur); ohne Auswahl wird die Raumtemperatur verwendet
+
+__Hinweis:__ Die thermische Behaglichkeit wird nach ISO 7730 berechnet. Der PMV (Predicted Mean Vote) beschreibt das zu erwartende Wärmeempfinden auf einer Skala von -3 bis +3, der PPD (Predicted Percentage of Dissatisfied) den zu erwartenden Anteil unzufriedener Personen. Der Behaglichkeitsbereich liegt zwischen -0,5 und +0,5 (PPD unter 10 %). Die Norm ist für Raumtemperaturen von 10 bis 30 °C und eine Luftfeuchte von 30 bis 70 % ausgelegt, außerhalb davon sind die Werte nur als Richtwert zu verstehen. Der PMV wird auf die Skala von -3 bis +3 begrenzt. Für Schlafzimmer sollte die Bettdecke als Kleidung gewählt werden; da das Modell für wache Personen entwickelt wurde, wird Schlafen nur grob abgebildet.
+
+PMV          | Empfinden
+------------ | ------------
+unter -2,5   | Kalt
+-2,5 … -1,5  | Kühl
+-1,5 … -0,5  | Etwas kühl
+-0,5 … +0,5  | Neutral
++0,5 … +1,5  | Etwas warm
++1,5 … +2,5  | Warm
+über +2,5    | Heiß
+
+PPD          | Kategorie (ISO 7730)
+------------ | --------------------
+unter 6 %    | A (sehr behaglich)
+6 – 10 %     | B (behaglich)
+10 – 15 %    | C (akzeptabel)
+ab 15 %      | unbehaglich
+
+> 🔔 Meldungsverwaltung ...
+
+Name                               | Beschreibung
+---------------------------------- | ---------------------------------
+Meldung an Anzeige senden          | Auswahl, ob ein Eintrag in die Meldungsverwaltung erfolgen soll oder nicht (Ja/Nein)
+Lebensdauer der Nachricht          | Wie lange soll die Meldung höchstens angezeigt werden? Spätestens wenn Lüften nicht mehr empfohlen wird, wird sie automatisch entfernt ('Bis nicht mehr nötig' = ohne Zeitbegrenzung).
+Nachricht an Visualisierung senden | Auswahl, ob eine Push-Nachricht gesendet werden soll oder nicht (Ja/Nein)
+Raumname                           | Text zur eindeutigen Zuordnung des Raums
+Visualisierungs-Instanz            | WebFront- oder Kachel-Visualisierung, an welche die Push-Nachrichten gesendet werden sollen
+Meldungsskript                     | Skript ID des Meldungsverwaltungsskripts, weiterführende Infos im Forum: [Meldungsanzeige im WebFront](https://community.symcon.de/t/meldungsanzeige-im-webfront/23473)
+
+> ✨ Visualisierung ...
+
+Name                  | Beschreibung
+--------------------- | ---------------------------------
+Raumnamen anzeigen?   | Zeigt den Raumnamen (aus der Meldungsverwaltung) in der Kopfzeile der Kachel; abschalten, wenn der Name schon über die Kachel-Visualisierung (Link- bzw. Variablenname) erscheint
+Elemente der Kachel   | Auswahl (_Anzeigen_) und Reihenfolge der Elemente: Empfehlungstext, Außenwerte (Zeile unter den Innenwerten), Differenz (neben der Raumtemperatur, farbig markiert wenn eine Meldung fällig ist), Raumklima-Index (Skala), Behaglichkeit PMV/PPD (Skala), Hitzeindex (Skala), Taupunkt innen, Wassergehalt innen, Jahreszeit (jeweils Chip); die Spalte _Beschreibung_ erklärt, was und wo das Element angezeigt wird
+Verlauf               | _Aus_, _Raumfeuchte_ oder _Raumfeuchte und Temperatur_ als Linie im Hintergrund der Kachel
+Zeitraum              | Zeitraum des Verlaufs: 24 Stunden, 48 Stunden oder 7 Tage
+Farbe Feuchte         | Farbe der Feuchtelinie; _Transparent_ verwendet die Akzentfarbe des Themes
+Farbe Temperatur      | Farbe der Temperaturlinie; _Transparent_ verwendet die (abgeschwächte) Textfarbe des Themes
+Komfortband anzeigen? | Zeigt hinter dem Verlauf den typischen Feuchtebereich des Raumtyps als grüne Zone (bei _Benutzerdefiniert_ 40 % bis zur Mindest-Raumfeuchte)
+
+__Hinweis:__ Der Verlauf wird aus dem Archiv gelesen (Stundenmittel) und erscheint nur, wenn die Raumfeuchte (und Temperatur) im Archiv geloggt wird. Das Modul schaltet das Logging nicht selbst ein.
+
+> ⚙️ Erweiterte Einstellungen ...
+
+Name                                                         | Beschreibung
+------------------------------------------------------------ | ---------------------------------
+Variablen für Außen- und Innentaupunkt anlegen?              | Legt die Variablen für die Taupunkte an.
+Variablen für Außen- und Innenwassergehalt der Luft anlegen? | Legt die Variablen für die Wassergehalte an.
+Variablen für Hitzeindex (innen) anlegen?                    | Legt die Variablen für Hitzeindex und Hitzewarnung an.
+Variable für Raumklima-Index anlegen?                        | Legt die Variable für den Raumklima-Index an.
+Variablen für thermische Behaglichkeit (PMV/PPD) anlegen?    | Legt die Variablen für PMV und PPD an (Einstellungen siehe 'Thermische Behaglichkeit').
+
+__Hitzeindex:__ Der Hitzeindex beschreibt die gefühlte Temperatur aus Lufttemperatur und Luftfeuchtigkeit. Berechnet wird er nach dem Verfahren des US-Wetterdienstes ([NWS](https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml)): Ab ca. 27 °C gilt die Regressionsformel nach Rothfusz (Steadman 1979), darunter eine einfache Näherung, die nahe an der Raumtemperatur liegt. Die Warnstufen entsprechen der üblichen Einteilung:
+
+Hitzeindex   | Warnstufe        | Hinweis
+------------ | ---------------- | ------------------------------
+unter 27 °C  | Unbedenklich     | –
+27 – 32 °C   | Vorsicht         | Bei längeren Zeiträumen und körperlicher Aktivität kann es zu Erschöpfungserscheinungen kommen.
+32 – 41 °C   | Erhöhte Vorsicht | Es besteht die Möglichkeit von Hitzeschäden wie Sonnenstich, Hitzekrampf und Hitzekollaps.
+41 – 54 °C   | Gefahr           | Sonnenstich, Hitzekrampf und Hitzekollaps sind wahrscheinlich; Hitzschlag ist möglich.
+über 54 °C   | Erhöhte Gefahr   | Hitzschlag und Sonnenstich sind wahrscheinlich.
+
+__Raumklima-Index:__ Der Raumklima-Index bewertet die Kombination aus Raumtemperatur und Raumfeuchte nach der Tabelle der ELV-Komfortanzeige (Auflösung 0,5 °C und 1 % rF):
+
+Index | Bewertung              | Bereich
+----- | ---------------------- | ------------------------------
+0     | Außerhalb des Bereichs | Temperatur unter 5 °C oder ab 36 °C (bei 25 – 75 % rF)
+1     | Trocken                | Luftfeuchte unter 25 % (temperaturunabhängig) bzw. zu trocken für die Temperatur
+2     | Komfort trocken        | noch behaglich, eher trocken
+3     | Komfort ideal          | behaglich
+4     | Komfort feucht         | noch behaglich, eher feucht
+5     | Feucht                 | Luftfeuchte über 75 % (temperaturunabhängig) bzw. zu feucht für die Temperatur
+
+Je wärmer der Raum, desto früher wird die Luft als feucht bewertet: bei 20 °C ab 58 % als _Komfort feucht_ und ab 68 % als _Feucht_, bei 23 °C bereits ab 50 % bzw. 59 %.
+
+Aktionsbereich:
+
+> 🚀 Aktion ausführen ...
+
+Aktion         | Beschreibung
+-------------- | ---------------------------------
+BERECHNEN      | Führt die Berechnung sofort aus (siehe `THS_Update`).
 
 ### 5. Statusvariablen
 
 Die Statusvariablen werden automatisch angelegt. Das Löschen einzelner kann zu Fehlfunktionen führen.
 
-Name                 | Typ     | Beschreibung
--------------------- | ------- | ------------------------------
-Wassergehalt Aussen  | Float   | Wassergehalt der Aussenluft
-Wassergehalt Innen   | Float   | Wassergehalt der Innenluft
-Taupunkt Aussen      | Float   | Taupunkt der Aussenluft
-Taupunkt Innen       | Float   | Taupunkt der Innenluft
-Ergebnis             | String  | Zusammenfassung des Berechnungsergebnisses
-Hinweis              | Boolean | Hinweis ob Lüften oder nicht!
-Differenz            | Float   | Differenz der Luftfeuchte zwischen Aussen und Innen  [+]=Innen feuchter, [-]=Aussen feuchter
-Schwellwert          | Integer | Offset der auf den realen Wert addiert wird und somit eine Meldung zum Lüften "verzögert"
+Ident               | Name                | Typ     | Beschreibung
+------------------- | ------------------- | ------- | ------------------------------
+Recommendation      | Empfehlung          | Integer | Abgestufte Lüftungsempfehlung (0 = Kein Effekt, 1 = Lüften, 2 = Lüften (wärmer), 3 = Kurz lüften, 4 = Sehr kurz lüften, 5 = Nicht lüften), identisch mit dem Badge der Kachel
+Hint                | Hinweis             | Boolean | Hinweis, ob gelüftet werden sollte oder nicht (einfaches Ja/Nein)
+Result              | Ergebnis            | String  | Textuelle Zusammenfassung des Berechnungsergebnisses
+Difference          | Differenz           | Float   | Differenz des Wassergehaltes zwischen innen und außen in Prozent: [+] = innen feuchter, [-] = außen feuchter
+DewPointOutdoor     | Taupunkt Außen      | Float   | Taupunkt der Außenluft
+DewPointIndoor      | Taupunkt Innen      | Float   | Taupunkt der Innenluft
+WaterContentOutdoor | Wassergehalt Außen  | Float   | Wassergehalt der Außenluft
+WaterContentIndoor  | Wassergehalt Innen  | Float   | Wassergehalt der Innenluft
+HeatingPeriod       | Heizperiode         | Boolean | Zeigt an, ob gerade Heizperiode ist
+HeatIndex           | Hitzeindex          | Float   | Hitzeindex (gefühlte Temperatur) der Raumluft
+HeatWarning         | Hitzewarnung        | Integer | Warnstufe des Hitzeindex (0 = unbedenklich … 4 = erhöhte Gefahr)
+ComfortIndex        | Raumklima-Index     | Integer | Bewertung des Raumklimas (0 = außerhalb des Bereichs, 1 = trocken … 5 = feucht)
+PredictedMeanVote   | Behaglichkeit (PMV) | Float   | Zu erwartendes Wärmeempfinden nach ISO 7730 (-3 kalt … +3 heiß)
+PredictedDissatisfied | Unzufriedene (PPD) | Float  | Zu erwartender Anteil unzufriedener Personen nach ISO 7730
+MessageThreshold    | Schwellwert         | Integer | _Veraltet:_ Schwellwert der Differenz, ab dem eine Meldung zum Lüften erfolgt
 
-_Hinweis:_ Die Variablen für Taupunkte, Wassergehalte und den Schwellwert werden nur angelegt, wenn die entsprechende Checkbox unter 'Erweiterte Einstellungen' aktiviert ist.
+_Hinweis:_ Die Variablen für Taupunkte, Wassergehalte, Hitzeindex, Raumklima-Index und Behaglichkeit werden nur angelegt, wenn die entsprechende Checkbox unter 'Erweiterte Einstellungen' aktiviert ist, die Variable für die Heizperiode über die Checkbox in der 'Lüftungslogik'.
+
+_Veraltet:_ Die Variable _Schwellwert_ wird nicht mehr angelegt, da die Lüftungslogik sie ersetzt. Ist sie aus einer früheren Version noch vorhanden, bleibt sie erhalten und wird als zusätzliche Bedingung berücksichtigt (Meldung nur, wenn die Differenz den Schwellwert überschreitet). Wird sie nicht mehr benötigt, kann sie manuell gelöscht werden.
 
 ### 6. Darstellungen
 
@@ -101,17 +222,46 @@ Die Darstellungen werden direkt an den Statusvariablen hinterlegt, es werden kei
 
 Variable             | Darstellung   | Werte
 -------------------- | ------------- | ------------------------------
-Wassergehalt Aussen  | Wertanzeige   | g/m³ (2 Nachkommastellen)
-Wassergehalt Innen   | Wertanzeige   | g/m³ (2 Nachkommastellen)
-Taupunkt Aussen      | Wertanzeige   | °C (1 Nachkommastelle)
-Taupunkt Innen       | Wertanzeige   | °C (1 Nachkommastelle)
+Empfehlung           | Wertanzeige   | Kein Effekt (0, grau), Lüften (1, orange), Lüften (wärmer) (2, orange), Kurz lüften (3, gelb), Sehr kurz lüften (4, gelb), Nicht lüften (5, grün)
 Hinweis              | Wertanzeige   | Nicht lüften! (false), Lüften! (true)
-Differenz            | Wertanzeige   | % (2 Nachkommastellen, vorzeichenbehaftet)
-Schwellwert          | Schieberegler | 0 – 250 % (Schrittweite 10)
+Ergebnis             | Wertanzeige   | Text
+Differenz            | Wertanzeige   | % (2 Nachkommastellen, vorzeichenbehaftet; positiv = Lüften sinnvoll)
+Taupunkt Außen       | Wertanzeige   | °C (1 Nachkommastelle)
+Taupunkt Innen       | Wertanzeige   | °C (1 Nachkommastelle)
+Wassergehalt Außen   | Wertanzeige   | g/m³ (2 Nachkommastellen)
+Wassergehalt Innen   | Wertanzeige   | g/m³ (2 Nachkommastellen)
+Heizperiode          | Wertanzeige   | Außerhalb der Heizperiode (false), Heizperiode (true)
+Hitzeindex           | Wertanzeige   | °C (1 Nachkommastelle), Farbe und Icon je Warnstufe
+Hitzewarnung         | Wertanzeige   | Unbedenklich (0), Vorsicht (1), Erhöhte Vorsicht (2), Gefahr (3), Erhöhte Gefahr (4)
+Raumklima-Index      | Wertanzeige   | Außerhalb des Bereichs (0), Trocken (1), Komfort trocken (2), Komfort ideal (3), Komfort feucht (4), Feucht (5)
+Behaglichkeit (PMV)  | Wertanzeige   | Empfinden mit Wert, z. B. „Neutral (-0.27)“ (2 Nachkommastellen), Farbe und Icon je Stufe
+Unzufriedene (PPD)   | Wertanzeige   | % (1 Nachkommastelle), Farbe je Kategorie
+Schwellwert          | Schieberegler | 0 – 250 % (Schrittweite 10), veraltet
 
 ### 7. Visualisierung
 
-Die erzeugten Variablen können direkt in die Visualisierung verlingt werden.  
+Die erzeugten Variablen können direkt in die Visualisierung verlinkt werden.
+
+Zusätzlich bietet das Modul eine eigene Kachel für die Kachel-Visualisierung. Sie passt ihren Inhalt an die Größe der Kachel an:
+
+* __Kopfzeile:__ Raumname (abschaltbar) und Lüftungsempfehlung als farbiges Badge (Wert der Variable _Empfehlung_); der vollständige Empfehlungstext erscheint als Tooltip:
+
+  Badge            | Farbe  | Bedeutung
+  ---------------- | ------ | ------------------------------
+  Lüften           | Orange | Lüften führt zur Trocknung der Raumluft
+  Lüften (wärmer)  | Orange | Lüften trocknet, aber es wird dadurch wärmer
+  Kurz lüften      | Gelb   | Kurzes Lüften möglich, es wird dadurch etwas feuchter
+  Sehr kurz lüften | Gelb   | Sehr kurzes Lüften möglich, es wird dadurch feuchter
+  Kein Effekt      | Grau   | Etwa gleiche Feuchtigkeiten innen und außen
+  Nicht lüften     | Grün   | Lüften würde die Raumluft feuchter machen
+* __Innenwerte:__ Raumfeuchte (groß) und Raumtemperatur, darunter optional Außenwerte und Differenz
+* __Elemente:__ die im Formular gewählten Elemente in der eingestellten Reihenfolge
+  * _Empfehlungstext_: der vollständige Text der Variable _Ergebnis_ (standardmäßig aus, da das Badge die Empfehlung bereits abgestuft zeigt)
+  * _Skalen_: Farbskala mit Markierung für Raumklima-Index, Behaglichkeit (PMV/PPD) und Hitzeindex, in den Farben der jeweiligen Darstellung; der Hitzeindex erscheint erst ab der Warnstufe _Vorsicht_, darunter unterscheidet er sich kaum von der Raumtemperatur
+  * _Chips_: kompakte Werte für Taupunkt und Wassergehalt sowie die Jahreszeit (Text = Modus _Immer_, _Automatisch_ oder _Kalender_; Icon = Zustand: Kalender, Flamme in der Heizperiode, Sonne außerhalb)
+* __Hintergrund:__ Verlauf der Raumfeuchte (Akzentfarbe, optional auch der Temperatur in der Textfarbe mit zarterer Füllung) aus dem Archiv und das Komfortband des Raumtyps als grüne Zone: Liegt die Feuchtelinie darin, ist die Raumfeuchte im typischen Bereich
+
+Ohne Raumname rückt die Empfehlung (ab ca. 260 px Breite) neben die Innenwerte. Auf breiten Kacheln (etwa doppelt so breit wie hoch) stehen Außenwerte und Differenz in derselben Zeile rechts neben den Innenwerten, sodass mehr Platz für die Elemente bleibt. Auf kleinen Kacheln werden nur Empfehlung und Innenwerte angezeigt. Passen nicht alle gewählten Elemente in die Kachel, werden sie von unten her (also die zuletzt einsortierten) ausgeblendet. Die Kachel wird mit jeder Berechnung (siehe Aktualisierungszeit) aktualisiert. Skalen und Chips erscheinen nur, wenn die zugehörigen Variablen angelegt sind.
 
 ### 8. Befehlsreferenz
 
@@ -125,6 +275,22 @@ Die Funktion liefert keinerlei Rückgabewert.
 __Beispiel__: `THS_Update(12345);`
 
 ### 9. Versionshistorie
+
+v4.0.20261015
+
+* _NEU_: Kompatibilität auf Symcon 8.1 angehoben, Code und interne Bibliotheken modernisiert
+* _NEU_: Konfigurationsformular überarbeitet und vereinheitlicht
+* _NEU_: Lüftungslogik mit Jahreszeit (Immer/Automatisch/Kalender), Raumtyp, Mindest-Raumfeuchte und Mindest-Differenz
+* _NEU_: Statusvariable Empfehlung mit abgestufter Lüftungsempfehlung
+* _NEU_: Hitzeindex inkl. Hitzewarnung
+* _NEU_: Raumklima-Index nach ELV-Komfortanzeige
+* _NEU_: Thermische Behaglichkeit (PMV/PPD) nach ISO 7730 inkl. automatischer Kleidung
+* _NEU_: Eigene Kachel für die Kachel-Visualisierung mit wählbaren Elementen und Feuchteverlauf
+* _NEU_: Meldungen nur noch einmal pro Lüftungsphase, die Anzeige-Meldung folgt der Empfehlung und wird am Ende der Phase automatisch entfernt
+* _FIX_: Berechnung der Raumfeuchte nach dem Lüften korrigiert
+* _FIX_: Fehlende Variablen und ungültige Werte abgesichert, Statuscodes ergänzt
+* _FIX_: Schwellwert durch Lüftungslogik ersetzt (vorhandene Variable bleibt erhalten)
+* _FIX_: Darstellungen, Übersetzungen und Dokumentation überarbeitet
 
 v3.0.20221204
 

@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>HumiditySensor</title>
+    <meta charset="utf-8" />
+    <style>
+        :root {
+            --chart-color: var(--accent-color, #11A0F3);
+            --chart-temp-color: color-mix(in srgb, var(--content-color, #FFFFFF) 55%, transparent);
+            --band-color: #58A906;
+            --hint-color: #58A906;
+        }
+
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0px;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            padding: var(--margin-top) var(--margin-side) calc(var(--margin-bottom, 0px) * 0.5);
+            container: card / size;
+        }
+
+        /* ── Chart: humidity history in the background ───────────────────── */
+        #chart {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 30%;
+            bottom: 0;
+            width: 100%;
+            height: 70%;
+            pointer-events: none;
+        }
+
+        .hs-band {
+            fill: color-mix(in srgb, var(--band-color) 10%, transparent);
+            stroke: none;
+        }
+
+
+        .hs-line {
+            fill: none;
+            stroke: var(--chart-color);
+            stroke-width: 1.5;
+            stroke-opacity: 0.55;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .hs-line-temp {
+            fill: none;
+            stroke: var(--chart-temp-color);
+            stroke-width: 1.5;
+            stroke-opacity: 0.55;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .hs-area {
+            fill: url(#hs-gradient);
+            stroke: none;
+        }
+
+        .hs-area-temp {
+            fill: url(#hs-gradient-temp);
+            stroke: none;
+        }
+
+        /* ── Content ─────────────────────────────────────────────────────── */
+        #content {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-rows: auto auto auto minmax(0, 1fr);
+            grid-template-areas:
+                "room hint"
+                "main main"
+                "sub sub"
+                "extra extra";
+            column-gap: 8px;
+            row-gap: clamp(4px, 3cqh, 10px);
+            width: 100%;
+            height: 100%;
+            container-type: size;
+        }
+
+        /* ── Wide enough: without room name the recommendation moves up ── */
+        @container card (min-width: 260px) {
+            #content.no-room {
+                grid-template-rows: auto auto minmax(0, 1fr);
+                grid-template-areas:
+                    "main hint"
+                    "sub sub"
+                    "extra extra";
+            }
+            #content.no-room .hs-hint {
+                align-self: start;
+            }
+        }
+
+        /* ── Wide tiles: secondary values next to the indoor values ─────── */
+        @container card (min-aspect-ratio: 1.8) and (min-width: 360px) {
+            #content {
+                grid-template-columns: auto minmax(0, 1fr) auto;
+                grid-template-rows: auto auto minmax(0, 1fr);
+                grid-template-areas:
+                    "room room hint"
+                    "main sub sub"
+                    "extra extra extra";
+                column-gap: clamp(12px, 4cqw, 24px);
+            }
+            #content.no-room {
+                grid-template-rows: auto minmax(0, 1fr);
+                grid-template-areas:
+                    "main sub hint"
+                    "extra extra extra";
+            }
+            .hs-sub {
+                align-self: end;
+                justify-content: flex-end;
+                padding-bottom: 0.2em;
+            }
+        }
+
+        /* ── Head: room & recommendation ─────────────────────────────────── */
+        .hs-head {
+            display: contents;
+        }
+
+        .hs-room {
+            grid-area: room;
+            align-self: center;
+            font-size: clamp(8px, 4.5cqh, 11px);
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            opacity: 0.5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .hs-hint {
+            display: flex;
+            align-items: center;
+            gap: clamp(3px, 1.5cqw, 6px);
+            grid-area: hint;
+            justify-self: end;
+            align-self: center;
+            font-size: clamp(10px, 5.5cqh, 14px);
+            font-weight: 600;
+            line-height: 1;
+            color: #FFFFFF;
+            background: var(--hint-color);
+            padding: clamp(5px, 2.6cqh, 8px) clamp(10px, 3.5cqw, 14px);
+            border-radius: 999px;
+            white-space: nowrap;
+            transition: background 0.18s;
+        }
+
+        /* Optical centering: with line-height 1 the capitals sit above the middle */
+        #hint-text {
+            display: block;
+            line-height: 1;
+            position: relative;
+            top: 0.07em;
+        }
+
+        @supports (text-box: trim-both cap alphabetic) {
+            #hint-text {
+                top: 0;
+                text-box: trim-both cap alphabetic;
+                padding-block: 0.15em;
+            }
+        }
+
+        /* Pulsing dot: the notification conditions are met */
+        .hs-dot {
+            display: none;
+            flex-shrink: 0;
+            width: 0.5em;
+            height: 0.5em;
+            border-radius: 50%;
+            background: #FFFFFF;
+            animation: hs-pulse 1.6s ease-out infinite;
+        }
+
+        .hs-hint.hs-alert .hs-dot {
+            display: block;
+        }
+
+        @keyframes hs-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 0.45em rgba(255, 255, 255, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .hs-dot {
+                animation: none;
+            }
+        }
+
+        /* ── Main: indoor values ─────────────────────────────────────────── */
+        .hs-main {
+            grid-area: main;
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            column-gap: clamp(8px, 4cqw, 16px);
+            row-gap: 2px;
+        }
+
+        .hs-humidity {
+            font-size: clamp(22px, 20cqh, 52px);
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .hs-unit {
+            font-size: 0.45em;
+            opacity: 0.5;
+            vertical-align: super;
+            margin-left: 2px;
+        }
+
+        .hs-temperature {
+            font-size: clamp(12px, 8cqh, 20px);
+            line-height: 1;
+            opacity: 0.75;
+            white-space: nowrap;
+        }
+
+        .hs-temperature svg,
+        .hs-temperature i {
+            margin-right: 0.2em;
+            vertical-align: -0.1em;
+        }
+
+        /* Difference: highlighted when the notification conditions are met */
+        .hs-difference {
+            transition: color 0.3s, opacity 0.3s;
+        }
+
+        .hs-difference.hs-alert {
+            color: var(--hint-color);
+            font-weight: 600;
+            opacity: 1;
+        }
+
+        .hs-sub {
+            grid-area: sub;
+            font-size: clamp(9px, 5cqh, 12px);
+            color: color-mix(in srgb, var(--content-color) 60%, transparent);
+            white-space: nowrap;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: clamp(8px, 4cqw, 16px);
+        }
+
+        .hs-sub-item {
+            display: flex;
+            align-items: center;
+            gap: clamp(2px, 1cqw, 5px);
+            min-width: 0;
+        }
+
+        /* ── Extra: configurable elements ────────────────────────────────── */
+        .hs-extra {
+            grid-area: extra;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            gap: clamp(4px, 3cqh, 9px);
+            overflow: hidden;
+        }
+
+        .hs-text {
+            font-size: clamp(9px, 5cqh, 12px);
+            color: color-mix(in srgb, var(--content-color) 70%, transparent);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .hs-scale {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .hs-scale-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .hs-scale-label {
+            font-size: clamp(7px, 3.8cqh, 9px);
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            opacity: 0.5;
+            white-space: nowrap;
+        }
+
+        .hs-scale-value {
+            font-size: clamp(9px, 4.6cqh, 12px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .hs-bar {
+            position: relative;
+            height: 4px;
+            border-radius: 2px;
+            margin: 3px 0;
+            background: color-mix(in srgb, var(--content-color) 10%, transparent);
+        }
+
+        .hs-knob {
+            position: absolute;
+            top: 50%;
+            width: 10px;
+            height: 10px;
+            margin: -5px 0 0 -5px;
+            border-radius: 50%;
+            background: var(--knob-color, var(--content-color));
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--knob-color, var(--content-color)) 18%, transparent);
+            transition: left 0.6s ease, background 0.3s;
+        }
+
+        .hs-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(3px, 1.5cqw, 6px);
+        }
+
+        .hs-chip {
+            flex: 1 1 0;
+            justify-content: center;
+            min-width: max-content;
+            font-size: clamp(9px, 4.6cqh, 12px);
+            color: color-mix(in srgb, var(--content-color) 65%, transparent);
+            background: color-mix(in srgb, var(--content-color) 9%, var(--card-color, #2B2C30));
+            display: flex;
+            align-items: center;
+            gap: clamp(2px, 1cqw, 5px);
+            padding: clamp(1px, 0.8cqh, 3px) clamp(6px, 2.2cqw, 10px);
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .hs-hidden {
+            display: none !important;
+        }
+
+        /* ── Very small tiles: only recommendation and indoor values, otherwise fitItems() decides */
+        @container (max-height: 80px) {
+            .hs-sub,
+            .hs-extra {
+                display: none;
+            }
+        }
+
+        @container (max-width: 200px) {
+            .hs-room {
+                display: none;
+            }
+        }
+    </style>
+    <script src="/icons.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div id="card">
+        <svg id="chart" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id="hs-gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--chart-color)" stop-opacity="0.26" />
+                    <stop offset="100%" stop-color="var(--chart-color)" stop-opacity="0.06" />
+                </linearGradient>
+                <linearGradient id="hs-gradient-temp" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--chart-temp-color)" stop-opacity="0.12" />
+                    <stop offset="100%" stop-color="var(--chart-temp-color)" stop-opacity="0" />
+                </linearGradient>
+            </defs>
+            <rect id="chart-band" class="hs-band" x="0" width="100" y="0" height="0" />
+            <path id="chart-area" class="hs-area" d="" />
+            <path id="chart-temp-area" class="hs-area-temp" d="" />
+            <path id="chart-temp" class="hs-line-temp" d="" />
+            <path id="chart-line" class="hs-line" d="" />
+        </svg>
+        <div id="content">
+            <div class="hs-head">
+                <div class="hs-room" id="room"></div>
+                <div class="hs-hint" id="hint">
+                    <span class="hs-dot"></span>
+                    <span id="hint-text">--</span>
+                </div>
+            </div>
+            <div class="hs-main">
+                <div class="hs-humidity" id="humidity">--</div>
+                <div class="hs-temperature" id="temperature-box"><i class="fa-light fa-thermometer-half"></i><span id="temperature">--</span></div>
+                <div class="hs-temperature hs-difference hs-hidden" id="difference-item"><i class="fa-light fa-plus-minus"></i><span id="difference"></span></div>
+            </div>
+            <div class="hs-sub" id="sub-row">
+                <div class="hs-sub-item" id="outdoor-item">
+                    <i class="fa-light fa-house-tree"></i>
+                    <span id="outdoor"></span>
+                </div>
+            </div>
+            <div class="hs-extra" id="extra"></div>
+        </div>
+    </div>
+
+    <script>
+        // ── INIT: set root/style variables ───────────────────────────────────
+        const p = new URLSearchParams(location.search);
+        const root = document.documentElement;
+        const m = {
+            margintop: ['--margin-top'],
+            marginside: ['--margin-side'],
+            marginbottom: ['--margin-bottom']
+        };
+        for (const k in m) {
+            const v = p.get(k);
+            if (!v) continue;
+            m[k].forEach(c => root.style.setProperty(c, /^\d+(\.\d+)?$/.test(v) ? `${v}px` : v));
+        }
+
+        // ── ELEMENTS: ────────────────────────────────────────────────────────
+        const elContent = document.getElementById('content');
+        const elRoom = document.getElementById('room');
+        const elHint = document.getElementById('hint');
+        const elHintText = document.getElementById('hint-text');
+        const elHumidity = document.getElementById('humidity');
+        const elTemperature = document.getElementById('temperature');
+        const elTemperatureBox = document.getElementById('temperature-box');
+        const elSubRow = document.getElementById('sub-row');
+        const elOutdoorItem = document.getElementById('outdoor-item');
+        const elOutdoor = document.getElementById('outdoor');
+        const elDifferenceItem = document.getElementById('difference-item');
+        const elDifference = document.getElementById('difference');
+        const elExtra = document.getElementById('extra');
+
+        // ── STATE: ───────────────────────────────────────────────────────────
+        let items = [];
+        let chart = null;
+
+        // ── ICON: FontAwesome icon mapping ──────────────────────────────────
+        function getIconType(iconName) {
+            if (!iconName || iconName === 'Transparent') {
+                return { type: 'none', classes: '' };
+            }
+            const raw = String(iconName).trim();
+            const iconMapping = window.iconMapping || {};
+            const mapped = iconMapping[raw] ?? raw;
+            const iconClass = String(mapped).trim();
+            const tokens = iconClass.split(/\s+/).filter(Boolean);
+            if (tokens.some(t => t === 'fak' || t === 'fa-kit')) {
+                return { type: 'kit', classes: (tokens.includes('fa-fw') ? '' : 'fa-fw ') + iconClass };
+            }
+            if (tokens.some(t => t === 'fa-light' || t === 'fal')) {
+                return { type: 'fa-light', classes: (tokens.includes('fa-fw') ? '' : 'fa-fw ') + iconClass };
+            }
+            const baseName = iconClass.startsWith('fa-') ? iconClass.substring(3) : iconClass;
+            try {
+                if (window.FontAwesome && typeof window.FontAwesome.findIconDefinition === 'function') {
+                    if (window.FontAwesome.findIconDefinition({ prefix: 'fal', iconName: baseName })) {
+                        return { type: 'fa-light', classes: `fa-fw fa-light fa-${baseName}` };
+                    }
+                }
+            } catch (e) {}
+            return { type: 'kit', classes: `fa-fw fa-kit fak fa-${baseName}` };
+        }
+
+        function createIcon(name) {
+            const icon = document.createElement('i');
+            icon.className = getIconType(name).classes;
+            return icon;
+        }
+
+        // ── FUNCTION: value with a smaller unit (e.g. "64 %") ────────────────
+        function setValueWithUnit(el, text) {
+            el.textContent = '';
+            const match = String(text ?? '--').match(/^\s*([-+]?[\d.,]+)\s*(.*)$/);
+            if (!match) {
+                el.textContent = text ?? '--';
+                return;
+            }
+            el.append(document.createTextNode(match[1]));
+            if (match[2]) {
+                const unit = document.createElement('span');
+                unit.className = 'hs-unit';
+                unit.textContent = match[2];
+                el.append(unit);
+            }
+        }
+
+        // ── FUNCTION: background of a scale (segments or gradient) ───────────
+        const neutralColor = 'color-mix(in srgb, var(--content-color) 15%, transparent)';
+        function scaleBackground(colors, mode) {
+            const list = colors.map(c => c || neutralColor);
+            if (list.length === 0) return '';
+            const step = 100 / list.length;
+            if (mode === 'gradient') {
+                const stops = list.map((c, i) => `${c} ${((i + 0.5) * step).toFixed(2)}%`);
+                return `linear-gradient(to right, ${stops.join(', ')})`;
+            }
+            const stops = list.map((c, i) => `${c} ${(i * step).toFixed(2)}% ${((i + 1) * step).toFixed(2)}%`);
+            return `linear-gradient(to right, ${stops.join(', ')})`;
+        }
+
+        function knobColor(colors, mode, pos) {
+            if (colors.length === 0) return '';
+            const index = Math.min(colors.length - 1, Math.floor(pos * colors.length));
+            return colors[index] || '';
+        }
+
+        // ── BUILD: configurable elements ─────────────────────────────────────
+        function buildItems() {
+            elExtra.innerHTML = '';
+            let chips = null;
+            for (const item of items) {
+                if (item.type === 'text') {
+                    const text = document.createElement('div');
+                    text.className = 'hs-text';
+                    text.textContent = item.text ?? '';
+                    elExtra.append(text);
+                    chips = null;
+                } else if (item.type === 'scale') {
+                    const scale = document.createElement('div');
+                    scale.className = 'hs-scale';
+                    const head = document.createElement('div');
+                    head.className = 'hs-scale-head';
+                    const label = document.createElement('span');
+                    label.className = 'hs-scale-label';
+                    label.textContent = item.label ?? '';
+                    const value = document.createElement('span');
+                    value.className = 'hs-scale-value';
+                    value.textContent = item.text ?? '';
+                    head.append(label, value);
+                    const bar = document.createElement('div');
+                    bar.className = 'hs-bar';
+                    const colors = Array.isArray(item.colors) ? item.colors : [];
+                    bar.style.background = scaleBackground(colors, item.mode);
+                    if (item.pos !== null && item.pos !== undefined && !isNaN(item.pos)) {
+                        const pos = Math.max(0, Math.min(1, Number(item.pos)));
+                        const knob = document.createElement('div');
+                        knob.className = 'hs-knob';
+                        knob.style.left = `calc(5px + (100% - 10px) * ${pos.toFixed(3)})`;
+                        const color = knobColor(colors, item.mode, pos);
+                        if (color) knob.style.setProperty('--knob-color', color);
+                        bar.append(knob);
+                    }
+                    scale.title = `${item.label ?? ''}: ${item.text ?? ''}`;
+                    scale.append(head, bar);
+                    elExtra.append(scale);
+                    chips = null;
+                } else if (item.type === 'chip') {
+                    // Consecutive chips share one row
+                    if (chips === null) {
+                        chips = document.createElement('div');
+                        chips.className = 'hs-chips';
+                        elExtra.append(chips);
+                    }
+                    const chip = document.createElement('div');
+                    chip.className = 'hs-chip';
+                    if (item.label) chip.title = item.label;
+                    const text = document.createElement('span');
+                    text.textContent = item.text ?? '';
+                    chip.append(createIcon(item.icon), text);
+                    chips.append(chip);
+                }
+            }
+            fitItems();
+        }
+
+        // ── FUNCTION: hide the last elements (lowest priority) which do not fit
+        function fitItems() {
+            // Chips are hidden one by one, all other elements as a whole
+            const units = [];
+            for (const el of elExtra.children) {
+                el.classList.remove('hs-hidden');
+                if (el.classList.contains('hs-chips')) {
+                    units.push(...el.children);
+                } else {
+                    units.push(el);
+                }
+            }
+            units.forEach(el => el.classList.remove('hs-hidden'));
+            for (const el of units.reverse()) {
+                if (elExtra.scrollHeight <= elExtra.clientHeight + 1) break;
+                el.classList.add('hs-hidden');
+                const row = el.parentElement;
+                if (row.classList.contains('hs-chips') && !row.querySelector('.hs-chip:not(.hs-hidden)')) {
+                    row.classList.add('hs-hidden');
+                }
+            }
+        }
+
+        // ── FUNCTION: smooth path through the points (Catmull-Rom) ───────────
+        function smoothPath(pts) {
+            if (pts.length < 2) return '';
+            let d = `M ${pts[0].x.toFixed(2)},${pts[0].y.toFixed(2)}`;
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p0 = pts[i - 1] || pts[i];
+                const p1 = pts[i];
+                const p2 = pts[i + 1];
+                const p3 = pts[i + 2] || p2;
+                const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+                const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+                d += ` C ${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+            }
+            return d;
+        }
+
+        function toPoints(values, min, max) {
+            const range = (max - min) || 1;
+            const step = 100 / Math.max(1, values.length - 1);
+            return values.map((v, i) => ({ x: i * step, y: 100 - ((v - min) / range) * 100 }));
+        }
+
+        // ── FUNCTION: own color or the default of the stylesheet ────────────
+        function setColor(property, color) {
+            if (color) {
+                root.style.setProperty(property, color);
+            } else {
+                root.style.removeProperty(property);
+            }
+        }
+
+        // ── RENDER: history chart ────────────────────────────────────────────
+        function renderChart() {
+            const band = document.getElementById('chart-band');
+            const line = document.getElementById('chart-line');
+            const area = document.getElementById('chart-area');
+            const temp = document.getElementById('chart-temp');
+            const tempArea = document.getElementById('chart-temp-area');
+            const values = (chart && Array.isArray(chart.values)) ? chart.values.filter(v => v !== null && !isNaN(v)) : [];
+            if (values.length < 2) {
+                [line, area, temp, tempArea].forEach(el => el.setAttribute('d', ''));
+                band.setAttribute('height', '0');
+                return;
+            }
+            setColor('--chart-color', chart.color);
+            setColor('--chart-temp-color', chart.tempColor);
+
+            // Scale the humidity together with the comfort band, so the band stays meaningful
+            let min = Math.min(...values), max = Math.max(...values);
+            const hasBand = Array.isArray(chart.band) && chart.band.length === 2;
+            if (hasBand) {
+                min = Math.min(min, chart.band[0]);
+                max = Math.max(max, chart.band[1]);
+            }
+            const pad = Math.max(2, (max - min) * 0.1);
+            min -= pad;
+            max += pad;
+
+            const pts = toPoints(values, min, max);
+            const path = smoothPath(pts);
+            line.setAttribute('d', path);
+            area.setAttribute('d', path + ` L 100,100 L 0,100 Z`);
+
+            if (hasBand) {
+                const y1 = 100 - ((chart.band[1] - min) / (max - min)) * 100;
+                const y2 = 100 - ((chart.band[0] - min) / (max - min)) * 100;
+                band.setAttribute('y', y1.toFixed(2));
+                band.setAttribute('height', Math.max(0, y2 - y1).toFixed(2));
+            } else {
+                band.setAttribute('height', '0');
+            }
+
+            // Temperature with its own scale, only the trend matters
+            const temps = Array.isArray(chart.temps) ? chart.temps.filter(v => v !== null && !isNaN(v)) : [];
+            if (temps.length >= 2) {
+                const tMin = Math.min(...temps), tMax = Math.max(...temps);
+                const tPad = Math.max(0.5, (tMax - tMin) * 0.15);
+                const tempPath = smoothPath(toPoints(temps, tMin - tPad, tMax + tPad));
+                temp.setAttribute('d', tempPath);
+                tempArea.setAttribute('d', tempPath + ' L 100,100 L 0,100 Z');
+            } else {
+                temp.setAttribute('d', '');
+                tempArea.setAttribute('d', '');
+            }
+        }
+
+        // ── SDK: handleMessage (data transfer) ───────────────────────────────
+        function handleMessage(encodedData) {
+            const decodedData = JSON.parse(encodedData);
+            let needsItems = false;
+            let needsChart = false;
+            let needsSub = false;
+
+            for (const parameter in decodedData) {
+                const value = decodedData[parameter];
+                switch (parameter) {
+                    case 'room':
+                        elRoom.textContent = value ?? '';
+                        elRoom.classList.toggle('hs-hidden', !value);
+                        elContent.classList.toggle('no-room', !value);
+                        break;
+                    case 'hintText':
+                        elHintText.textContent = value ?? '--';
+                        break;
+                    case 'hintColor':
+                        if (value) root.style.setProperty('--hint-color', value);
+                        break;
+                    case 'humidity':
+                        setValueWithUnit(elHumidity, value);
+                        break;
+                    case 'temperature':
+                        elTemperature.textContent = value ?? '--';
+                        break;
+                    case 'outdoor':
+                        elOutdoor.textContent = value ?? '';
+                        elOutdoorItem.classList.toggle('hs-hidden', !value);
+                        needsSub = true;
+                        break;
+                    case 'difference':
+                        elDifference.textContent = value ?? '';
+                        elDifferenceItem.classList.toggle('hs-hidden', !value);
+                        break;
+                    case 'alert':
+                        elHint.classList.toggle('hs-alert', !!value);
+                        elDifferenceItem.classList.toggle('hs-alert', !!value);
+                        break;
+                    case 'titles':
+                        elHint.title = value?.hint ?? '';
+                        elHumidity.title = value?.humidity ?? '';
+                        elTemperatureBox.title = value?.temperature ?? '';
+                        elOutdoorItem.title = value?.outdoor ?? '';
+                        elDifferenceItem.title = value?.difference ?? '';
+                        break;
+                    case 'items':
+                        items = Array.isArray(value) ? value : [];
+                        needsItems = true;
+                        break;
+                    case 'chart':
+                        chart = value;
+                        needsChart = true;
+                        break;
+                    default:
+                        console.warn('Unknown parameter:', parameter);
+                }
+            }
+            if (needsSub) {
+                elSubRow.classList.toggle('hs-hidden', !elOutdoor.textContent);
+            }
+            if (needsItems) buildItems();
+            if (needsChart) renderChart();
+        }
+
+        // ── INIT: ────────────────────────────────────────────────────────────
+        new ResizeObserver(() => fitItems()).observe(elExtra);
+    </script>
+</body>
+
+</html>
