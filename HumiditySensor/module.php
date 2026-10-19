@@ -55,11 +55,26 @@ class HumiditySensor extends IPSModuleStrict
     /** @var int Season mode: heating period determined by calendar months */
     private const SEASON_CALENDAR = 2;
 
+    /** @var int Hint mode: ventilation dries the room air (climate data only) */
+    private const HINT_CLIMATE_DATA = 0;
+
+    /** @var int Hint mode: ventilation required according to the complete ventilation logic (like the notification) */
+    private const HINT_VENTILATION_LOGIC = 1;
+
     /** @var int Clothing mode: fixed clothing insulation */
     private const CLOTHING_FIXED = 0;
 
     /** @var int Clothing mode: summer/winter clothing switched with the heating period */
     private const CLOTHING_AUTOMATIC = 1;
+
+    /** @var int Thermal state: PMV below the negative limit */
+    private const THERMAL_COOL = -1;
+
+    /** @var int Thermal state: PMV within the limits */
+    private const THERMAL_COMFORTABLE = 0;
+
+    /** @var int Thermal state: PMV above the positive limit */
+    private const THERMAL_WARM = 1;
 
     /** @var int Time constant for smoothing the outdoor temperature in seconds (48 h, like heating controllers) */
     private const SEASON_SMOOTHING = 172800;
@@ -177,7 +192,7 @@ class HumiditySensor extends IPSModuleStrict
         'ComfortIndex'   => ['Room climate index', 'Color scale with marker for the room climate (ELV comfort display)'],
         'ThermalComfort' => ['Thermal comfort', 'Color scale with marker for the thermal sensation (PMV) and the dissatisfied (PPD)'],
         'HeatIndex'      => ['Heat index', 'Color scale with marker for the heat index, only shown from the warning level \'Caution\''],
-        'Difference'     => ['Difference', 'Difference of the water content indoors to outdoors next to the room temperature, highlighted if a notification is due'],
+        'Difference'     => ['Difference', 'Difference of the water content indoors to outdoors on the right in the line of the outdoor values'],
         'DewPoint'       => ['Dew point indoor', 'Chip with the dew point of the room air'],
         'WaterContent'   => ['Water content indoor', 'Chip with the water content of the room air'],
         'HeatingPeriod'  => ['Season', 'Chip with the season mode (text) and the current heating period (icon)'],
@@ -345,6 +360,14 @@ class HumiditySensor extends IPSModuleStrict
         'SUFFIX'           => ' %',
     ];
 
+    /** @var array<string,mixed> Thermal state presentation (Value) */
+    private const THS_PRESENTATION_THERMAL_STATE = [
+        'ICON'             => 'person',
+        'INTERVALS'        => '[{"ColorActive":true,"ColorValue":255,"ConstantActive":true,"ConstantValue":"Too cool","ContentColorActive":false,"ContentColorValue":-1,"ConversionFactor":1,"DigitsActive":false,"DigitsValue":0,"IconActive":true,"IconValue":"temperature-low","IntervalMaxValue":-1,"IntervalMinValue":-1,"PrefixActive":false,"PrefixValue":"","SuffixActive":false,"SuffixValue":""},{"ColorActive":true,"ColorValue":5810438,"ConstantActive":true,"ConstantValue":"Comfortable","ContentColorActive":false,"ContentColorValue":-1,"ConversionFactor":1,"DigitsActive":false,"DigitsValue":0,"IconActive":true,"IconValue":"face-smile","IntervalMaxValue":0,"IntervalMinValue":0,"PrefixActive":false,"PrefixValue":"","SuffixActive":false,"SuffixValue":""},{"ColorActive":true,"ColorValue":16744448,"ConstantActive":true,"ConstantValue":"Too warm","ContentColorActive":false,"ContentColorValue":-1,"ConversionFactor":1,"DigitsActive":false,"DigitsValue":0,"IconActive":true,"IconValue":"temperature-high","IntervalMaxValue":1,"IntervalMinValue":1,"PrefixActive":false,"PrefixValue":"","SuffixActive":false,"SuffixValue":""}]',
+        'INTERVALS_ACTIVE' => true,
+        'PRESENTATION'     => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+    ];
+
     /** @var array<string,mixed> Heating period presentation (Value) */
     private const THS_PRESENTATION_HEATING_PERIOD = [
         'ICON'         => 'fire-flame-curved',
@@ -381,6 +404,8 @@ class HumiditySensor extends IPSModuleStrict
         $this->RegisterPropertyFloat('Activity', 1.2);
         $this->RegisterPropertyFloat('AirVelocity', 0.1);
         $this->RegisterPropertyInteger('TempRadiant', 0);
+        $this->RegisterPropertyFloat('ThermalLimit', 0.5);
+        $this->RegisterPropertyFloat('ThermalHysteresis', 0.2);
         // Message management
         $this->RegisterPropertyInteger('DashboardMessage', 0);
         $this->RegisterPropertyInteger('NotificationMessage', 0);
@@ -390,6 +415,7 @@ class HumiditySensor extends IPSModuleStrict
         $this->RegisterPropertyInteger('LifeTime', 0);
         // Ventilation logic
         $this->RegisterPropertyInteger('UpdateTimer', 15);
+        $this->RegisterPropertyInteger('HintMode', self::HINT_CLIMATE_DATA);
         $this->RegisterPropertyInteger('SeasonMode', self::SEASON_ALWAYS);
         $this->RegisterPropertyFloat('HeatingLimit', 15.0);
         $this->RegisterPropertyInteger('SeasonStart', 10);
@@ -409,9 +435,11 @@ class HumiditySensor extends IPSModuleStrict
         // Advanced settings
         $this->RegisterPropertyBoolean('CreateDewPoint', true);
         $this->RegisterPropertyBoolean('CreateWaterContent', true);
+        $this->RegisterPropertyBoolean('CreateOutdoorValues', true);
         $this->RegisterPropertyBoolean('CreateHeatIndex', false);
         $this->RegisterPropertyBoolean('CreateComfortIndex', false);
         $this->RegisterPropertyBoolean('CreateThermalComfort', false);
+        $this->RegisterPropertyBoolean('CreateThermalState', false);
         // Deprecated: replaced by the ventilation logic, only an existing variable is still evaluated
         $this->RegisterPropertyInteger('MessageThreshold', 100);
         $this->RegisterPropertyBoolean('CreateThreshold', false);
@@ -505,13 +533,14 @@ class HumiditySensor extends IPSModuleStrict
         $this->MaintainVariable('Hint', $this->Translate('Hint'), VARIABLETYPE_BOOLEAN, $hint, 1, true);
         $this->MaintainVariable('Result', $this->Translate('Result'), VARIABLETYPE_STRING, self::THS_PRESENTATION_RESULT, 2, true);
         $this->MaintainVariable('Difference', $this->Translate('Difference'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_DIFFERENCE, 3, true);
+        $outdoor = $this->ReadPropertyBoolean('CreateOutdoorValues');
         // Dew point
         $create = $this->ReadPropertyBoolean('CreateDewPoint');
-        $this->MaintainVariable('DewPointOutdoor', $this->Translate('Dew point outdoor'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_DEW_POINT, 4, $create);
+        $this->MaintainVariable('DewPointOutdoor', $this->Translate('Dew point outdoor'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_DEW_POINT, 4, $create && $outdoor);
         $this->MaintainVariable('DewPointIndoor', $this->Translate('Dew point indoor'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_DEW_POINT, 5, $create);
         // Water content
         $create = $this->ReadPropertyBoolean('CreateWaterContent');
-        $this->MaintainVariable('WaterContentOutdoor', $this->Translate('Water content outdoor'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_WATER_CONTENT, 6, $create);
+        $this->MaintainVariable('WaterContentOutdoor', $this->Translate('Water content outdoor'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_WATER_CONTENT, 6, $create && $outdoor);
         $this->MaintainVariable('WaterContentIndoor', $this->Translate('Water content indoor'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_WATER_CONTENT, 7, $create);
         // Deprecated message threshold, an existing variable is kept (no loss of archive data) but no longer created
         if ($this->HasThresholdVariable()) {
@@ -535,6 +564,9 @@ class HumiditySensor extends IPSModuleStrict
         $pmv = $this->TranslatePresentation(self::THS_PRESENTATION_PMV, 'INTERVALS', 'PrefixValue');
         $this->MaintainVariable('PredictedMeanVote', $this->Translate('Thermal comfort (PMV)'), VARIABLETYPE_FLOAT, $pmv, 13, $create);
         $this->MaintainVariable('PredictedDissatisfied', $this->Translate('Dissatisfied (PPD)'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_PPD, 14, $create);
+        $create = $create && $this->ReadPropertyBoolean('CreateThermalState');
+        $state = $this->TranslatePresentation(self::THS_PRESENTATION_THERMAL_STATE, 'INTERVALS', 'ConstantValue');
+        $this->MaintainVariable('ThermalState', $this->Translate('Thermal state'), VARIABLETYPE_INTEGER, $state, 15, $create);
 
         // Foreign variables may not be available yet, ApplyChanges is called again on IPS_KERNELSTARTED
         if (IPS_GetKernelRunlevel() !== KR_READY) {
@@ -696,8 +728,11 @@ class HumiditySensor extends IPSModuleStrict
         $vapourIndoor = $humyIndoor / 100 * $saturationIndoor;
 
         // Dew point
+        $outdoor = $this->ReadPropertyBoolean('CreateOutdoorValues');
         if ($this->ReadPropertyBoolean('CreateDewPoint')) {
-            $this->SetValueFloat('DewPointOutdoor', $this->DewPoint($tempOutdoor, $vapourOutdoor));
+            if ($outdoor) {
+                $this->SetValueFloat('DewPointOutdoor', $this->DewPoint($tempOutdoor, $vapourOutdoor));
+            }
             $this->SetValueFloat('DewPointIndoor', $this->DewPoint($tempIndoor, $vapourIndoor));
         }
 
@@ -706,7 +741,9 @@ class HumiditySensor extends IPSModuleStrict
         $waterIndoor = $this->WaterContent($tempIndoor, $vapourIndoor);
         $this->LogDebug(__FUNCTION__, sprintf('Water content (i/o): %.2f / %.2f g/m³', $waterIndoor, $waterOutdoor));
         if ($this->ReadPropertyBoolean('CreateWaterContent')) {
-            $this->SetValueFloat('WaterContentOutdoor', $waterOutdoor);
+            if ($outdoor) {
+                $this->SetValueFloat('WaterContentOutdoor', $waterOutdoor);
+            }
             $this->SetValueFloat('WaterContentIndoor', $waterIndoor);
         }
 
@@ -740,6 +777,9 @@ class HumiditySensor extends IPSModuleStrict
                 $this->LogDebug(__FUNCTION__, sprintf('PMV: %.2f, PPD: %.1f%%', $comfort[0], $comfort[1]));
                 $this->SetValueFloat('PredictedMeanVote', $comfort[0]);
                 $this->SetValueFloat('PredictedDissatisfied', $comfort[1]);
+                if ($this->ReadPropertyBoolean('CreateThermalState')) {
+                    $this->SetValueInteger('ThermalState', $this->ThermalState($comfort[0], $this->GetValue('ThermalState')));
+                }
             }
         }
 
@@ -784,7 +824,6 @@ class HumiditySensor extends IPSModuleStrict
         $this->SetValueInteger('Recommendation', $recommendation);
         $this->LogDebug(__FUNCTION__, $result);
         $this->SetValueString('Result', $result);
-        $this->SetValueBoolean('Hint', $hint);
 
         // Season
         $season = ($this->ReadPropertyInteger('SeasonMode') === self::SEASON_ALWAYS) || $heating;
@@ -803,6 +842,8 @@ class HumiditySensor extends IPSModuleStrict
             $notify = false;
         }
         $this->LogDebug(__FUNCTION__, sprintf('Notify: %s (season: %s)', $this->Stringify($notify), $this->Stringify($season)));
+        // The hint follows the climate data or optionally the complete ventilation logic (trigger for automations)
+        $this->SetValueBoolean('Hint', $this->ReadPropertyInteger('HintMode') === self::HINT_VENTILATION_LOGIC ? $notify : $hint);
 
         // Notify only once each time the conditions are met, the dashboard message follows the recommendation
         // and disappears when the conditions no longer apply
@@ -1010,11 +1051,11 @@ class HumiditySensor extends IPSModuleStrict
         }
         $end = time();
         $start = $end - $this->ReadPropertyInteger('ChartPeriod') * 3600;
-        $values = $this->ReadHistory($archive, 'HumyIndoor', $start, $end, true);
-        if ($values === null) {
+        $humidity = $this->ReadHistory($archive, 'HumyIndoor', $start, $end, true);
+        if ($humidity === null) {
             return null;
         }
-        $temps = ($mode === 2) ? $this->ReadHistory($archive, 'TempIndoor', $start, $end, false) : null;
+        $temperature = ($mode === 2) ? $this->ReadHistory($archive, 'TempIndoor', $start, $end, false) : null;
 
         // Comfort band of the room type, for a custom room up to the minimum room humidity
         $band = null;
@@ -1029,8 +1070,10 @@ class HumiditySensor extends IPSModuleStrict
         }
 
         return [
-            'values'    => $values,
-            'temps'     => $temps,
+            'values'    => $humidity['values'],
+            'times'     => $humidity['times'],
+            'temps'     => $temperature['values'] ?? null,
+            'tempTimes' => $temperature['times'] ?? null,
             'band'      => $band,
             'color'     => $this->HexColor($this->ReadPropertyInteger('ChartColor')),
             'tempColor' => $this->HexColor($this->ReadPropertyInteger('ChartColorTemp')),
@@ -1046,7 +1089,7 @@ class HumiditySensor extends IPSModuleStrict
      * @param int    $end      End time
      * @param bool   $humidity True if the value is a relative humidity
      *
-     * @return list<float>|null Hourly averages or null if the variable is not logged
+     * @return array{values: list<float>, times: list<int>}|null Hourly averages with their start times or null if the variable is not logged
      */
     private function ReadHistory(int $archive, string $property, int $start, int $end, bool $humidity): ?array
     {
@@ -1059,12 +1102,17 @@ class HumiditySensor extends IPSModuleStrict
         if (!is_array($rows) || count($rows) === 0) {
             return null;
         }
-        $values = array_map(fn (array $row): float => (float) $row['Avg'], array_reverse($rows));
+        $rows = array_reverse($rows);
+        $times = array_map(fn (array $row): int => (int) $row['TimeStamp'], $rows);
+        $values = array_map(fn (array $row): float => (float) $row['Avg'], $rows);
         // Some sensors deliver the humidity as a fraction (0..1) in a float variable
         if ($humidity && max($values) <= 1 && IPS_GetVariable($variable)['VariableType'] === VARIABLETYPE_FLOAT) {
             $values = array_map(fn (float $value): float => $value * 100, $values);
         }
-        return array_map(fn (float $value): float => round($value, 2), $values);
+        return [
+            'values' => array_map(fn (float $value): float => round($value, 2), $values),
+            'times'  => $times,
+        ];
     }
 
     /**
@@ -1505,6 +1553,32 @@ class HumiditySensor extends IPSModuleStrict
         }
         $column = (int) floor($humidity - 25);
         return (int) self::COMFORT_TABLE[$row][$column];
+    }
+
+    /**
+     * Thermal state with hysteresis: too cool, comfortable or too warm.
+     * Beyond the limit the state changes immediately, back to comfortable only once the PMV
+     * has returned by the hysteresis, in between the previous state is kept.
+     *
+     * @param float $pmv   Predicted mean vote
+     * @param int   $state Previous thermal state
+     *
+     * @return int New thermal state
+     */
+    private function ThermalState(float $pmv, int $state): int
+    {
+        $limit = $this->ReadPropertyFloat('ThermalLimit');
+        $back = $limit - $this->ReadPropertyFloat('ThermalHysteresis');
+        if ($pmv > $limit) {
+            return self::THERMAL_WARM;
+        }
+        if ($pmv < -$limit) {
+            return self::THERMAL_COOL;
+        }
+        if (($state === self::THERMAL_WARM && $pmv < $back) || ($state === self::THERMAL_COOL && $pmv > -$back)) {
+            return self::THERMAL_COMFORTABLE;
+        }
+        return $state;
     }
 
     /**

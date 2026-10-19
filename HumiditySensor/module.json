@@ -5,7 +5,9 @@
     "type": 3,
     "vendor": "",
     "aliases": [
-        "Humidity Calculator"
+        "Humidity Calculator",
+        "Room Climate",
+        "Room Comfort"
     ],
     "parentRequirements": [],
     "childRequirements": [],

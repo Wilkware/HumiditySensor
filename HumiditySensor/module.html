@@ -34,18 +34,58 @@
             height: 100%;
             padding: var(--margin-top) var(--margin-side) calc(var(--margin-bottom, 0px) * 0.5);
             container: card / size;
+            touch-action: pan-y;
         }
 
-        /* ── Chart: humidity history in the background ───────────────────── */
-        #chart {
+        /* ── Chart: humidity history in the background, starts below the indoor values */
+        .hs-chart-layer {
             position: absolute;
             left: 0;
             right: 0;
-            top: 30%;
+            top: var(--chart-top, 30%);
             bottom: 0;
-            width: 100%;
-            height: 70%;
             pointer-events: none;
+        }
+
+        #chart {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Value at the pointer position (mouse hover, touch) */
+        #chart-tip {
+            z-index: 2;
+        }
+
+        .hs-cursor {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            margin-left: -0.5px;
+            background: color-mix(in srgb, var(--content-color) 35%, transparent);
+        }
+
+        .hs-cursor-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            margin: -4px 0 0 -4px;
+            border-radius: 50%;
+            background: var(--chart-color);
+            box-shadow: 0 0 0 3px var(--card-color, #2B2C30);
+        }
+
+        .hs-tip {
+            position: absolute;
+            font-size: clamp(9px, 4.6cqh, 12px);
+            line-height: 1;
+            white-space: nowrap;
+            color: var(--content-color);
+            background: color-mix(in srgb, var(--content-color) 12%, var(--card-color, #2B2C30));
+            padding: 3px 7px;
+            border-radius: 999px;
         }
 
         .hs-band {
@@ -262,16 +302,6 @@
             vertical-align: -0.1em;
         }
 
-        /* Difference: highlighted when the notification conditions are met */
-        .hs-difference {
-            transition: color 0.3s, opacity 0.3s;
-        }
-
-        .hs-difference.hs-alert {
-            color: var(--hint-color);
-            font-weight: 600;
-            opacity: 1;
-        }
 
         .hs-sub {
             grid-area: sub;
@@ -290,6 +320,11 @@
             align-items: center;
             gap: clamp(2px, 1cqw, 5px);
             min-width: 0;
+        }
+
+        /* Difference always on the right, also without outdoor values */
+        #difference-item {
+            margin-left: auto;
         }
 
         /* ── Extra: configurable elements ────────────────────────────────── */
@@ -406,23 +441,30 @@
 
 <body>
     <div id="card">
-        <svg id="chart" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <defs>
-                <linearGradient id="hs-gradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="var(--chart-color)" stop-opacity="0.26" />
-                    <stop offset="100%" stop-color="var(--chart-color)" stop-opacity="0.06" />
-                </linearGradient>
-                <linearGradient id="hs-gradient-temp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="var(--chart-temp-color)" stop-opacity="0.12" />
-                    <stop offset="100%" stop-color="var(--chart-temp-color)" stop-opacity="0" />
-                </linearGradient>
-            </defs>
-            <rect id="chart-band" class="hs-band" x="0" width="100" y="0" height="0" />
-            <path id="chart-area" class="hs-area" d="" />
-            <path id="chart-temp-area" class="hs-area-temp" d="" />
-            <path id="chart-temp" class="hs-line-temp" d="" />
-            <path id="chart-line" class="hs-line" d="" />
-        </svg>
+        <div class="hs-chart-layer" id="chart-layer">
+            <svg id="chart" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="hs-gradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--chart-color)" stop-opacity="0.26" />
+                        <stop offset="100%" stop-color="var(--chart-color)" stop-opacity="0.06" />
+                    </linearGradient>
+                    <linearGradient id="hs-gradient-temp" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--chart-temp-color)" stop-opacity="0.12" />
+                        <stop offset="100%" stop-color="var(--chart-temp-color)" stop-opacity="0" />
+                    </linearGradient>
+                </defs>
+                <rect id="chart-band" class="hs-band" x="0" width="100" y="0" height="0" />
+                <path id="chart-area" class="hs-area" d="" />
+                <path id="chart-temp-area" class="hs-area-temp" d="" />
+                <path id="chart-temp" class="hs-line-temp" d="" />
+                <path id="chart-line" class="hs-line" d="" />
+            </svg>
+        </div>
+        <div class="hs-chart-layer hs-hidden" id="chart-tip">
+            <div class="hs-cursor" id="cursor"></div>
+            <div class="hs-cursor-dot" id="cursor-dot"></div>
+            <div class="hs-tip" id="tip"></div>
+        </div>
         <div id="content">
             <div class="hs-head">
                 <div class="hs-room" id="room"></div>
@@ -431,15 +473,18 @@
                     <span id="hint-text">--</span>
                 </div>
             </div>
-            <div class="hs-main">
+            <div class="hs-main" id="main">
                 <div class="hs-humidity" id="humidity">--</div>
                 <div class="hs-temperature" id="temperature-box"><i class="fa-light fa-thermometer-half"></i><span id="temperature">--</span></div>
-                <div class="hs-temperature hs-difference hs-hidden" id="difference-item"><i class="fa-light fa-plus-minus"></i><span id="difference"></span></div>
             </div>
             <div class="hs-sub" id="sub-row">
                 <div class="hs-sub-item" id="outdoor-item">
                     <i class="fa-light fa-house-tree"></i>
                     <span id="outdoor"></span>
+                </div>
+                <div class="hs-sub-item hs-hidden" id="difference-item">
+                    <i class="fa-light fa-plus-minus"></i>
+                    <span id="difference"></span>
                 </div>
             </div>
             <div class="hs-extra" id="extra"></div>
@@ -475,10 +520,20 @@
         const elDifferenceItem = document.getElementById('difference-item');
         const elDifference = document.getElementById('difference');
         const elExtra = document.getElementById('extra');
+        const elCard = document.getElementById('card');
+        const elMain = document.getElementById('main');
+        const elChartLayer = document.getElementById('chart-layer');
+        const elChartTip = document.getElementById('chart-tip');
+        const elCursor = document.getElementById('cursor');
+        const elCursorDot = document.getElementById('cursor-dot');
+        const elTip = document.getElementById('tip');
 
         // ── STATE: ───────────────────────────────────────────────────────────
         let items = [];
         let chart = null;
+        // Rendered history: humidity points with their values and times, temperature series
+        let plot = null;
+        let tipTimer = null;
 
         // ── ICON: FontAwesome icon mapping ──────────────────────────────────
         function getIconType(iconName) {
@@ -670,10 +725,13 @@
             const area = document.getElementById('chart-area');
             const temp = document.getElementById('chart-temp');
             const tempArea = document.getElementById('chart-temp-area');
-            const values = (chart && Array.isArray(chart.values)) ? chart.values.filter(v => v !== null && !isNaN(v)) : [];
+            hideTip();
+            const series = toSeries(chart?.values, chart?.times);
+            const values = series.map(s => s.v);
             if (values.length < 2) {
                 [line, area, temp, tempArea].forEach(el => el.setAttribute('d', ''));
                 band.setAttribute('height', '0');
+                plot = null;
                 return;
             }
             setColor('--chart-color', chart.color);
@@ -704,8 +762,10 @@
                 band.setAttribute('height', '0');
             }
 
+            plot = { pts, series, temps: toSeries(chart.temps, chart.tempTimes) };
+
             // Temperature with its own scale, only the trend matters
-            const temps = Array.isArray(chart.temps) ? chart.temps.filter(v => v !== null && !isNaN(v)) : [];
+            const temps = plot.temps.map(s => s.v);
             if (temps.length >= 2) {
                 const tMin = Math.min(...temps), tMax = Math.max(...temps);
                 const tPad = Math.max(0.5, (tMax - tMin) * 0.15);
@@ -716,6 +776,112 @@
                 temp.setAttribute('d', '');
                 tempArea.setAttribute('d', '');
             }
+        }
+
+        // ── FUNCTION: values with their times, invalid values are dropped ────
+        function toSeries(values, times) {
+            const list = [];
+            if (!Array.isArray(values)) return list;
+            values.forEach((v, i) => {
+                if (v !== null && !isNaN(v)) {
+                    list.push({ v: Number(v), t: Array.isArray(times) ? Number(times[i]) : NaN });
+                }
+            });
+            return list;
+        }
+
+        // ── FUNCTION: number and time formats of the browser language ───────
+        function formatNumber(value, digits) {
+            return Number(value).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+        }
+
+        function formatHumidity(value) {
+            return `${formatNumber(value, 0)} %`;
+        }
+
+        // Unit of the indoor temperature as delivered by its presentation (e.g. "°C")
+        function temperatureUnit() {
+            const match = elTemperature.textContent.match(/[^\d.,\s+-][^\d]*$/);
+            return match ? match[0].trim() : '°C';
+        }
+
+        // Periods longer than a day also need the weekday
+        function formatTime(time, span) {
+            if (isNaN(time)) return '';
+            const options = { hour: '2-digit', minute: '2-digit' };
+            if (span > 26 * 3600) options.weekday = 'short';
+            return new Date(time * 1000).toLocaleString(undefined, options);
+        }
+
+        function nearest(list, time) {
+            if (list.length === 0 || isNaN(time)) return null;
+            let best = null;
+            for (const entry of list) {
+                if (best === null || Math.abs(entry.t - time) < Math.abs(best.t - time)) best = entry;
+            }
+            return Math.abs(best.t - time) <= 5400 ? best : null;
+        }
+
+        // ── FUNCTION: tip above (or below, if there is no room) a chart point
+        function placeLabel(el, pt, prefer, gap) {
+            const height = elChartLayer.clientHeight;
+            const space = el.offsetHeight + gap;
+            const y = pt.y / 100 * height;
+            let above = prefer === 'above';
+            if (above && y < space) {
+                above = false;
+            } else if (!above && y > height - space) {
+                above = true;
+            }
+            el.style.left = `${pt.x}%`;
+            el.style.top = `${pt.y}%`;
+            // Shift proportionally to the position, so the label stays inside at the edges
+            el.style.transform = `translate(${-pt.x}%, ${above ? `calc(-100% - ${gap}px)` : `${gap}px`})`;
+        }
+
+        // ── RENDER: values at the pointer position ───────────────────────────
+        function showTip(clientX) {
+            if (!plot) return;
+            clearTimeout(tipTimer);
+            const rect = elChartLayer.getBoundingClientRect();
+            const count = plot.pts.length;
+            const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+            const index = Math.round(frac * (count - 1));
+            const pt = plot.pts[index];
+            const entry = plot.series[index];
+            const parts = [];
+            const time = formatTime(entry.t, plot.series[count - 1].t - plot.series[0].t);
+            if (time) parts.push(time);
+            parts.push(formatHumidity(entry.v));
+            const temp = nearest(plot.temps, entry.t);
+            if (temp) parts.push(`${formatNumber(temp.v, 1)} ${temperatureUnit()}`);
+            elTip.textContent = parts.join(' · ');
+            elChartTip.classList.remove('hs-hidden');
+            elCursor.style.left = `${pt.x}%`;
+            elCursorDot.style.left = `${pt.x}%`;
+            elCursorDot.style.top = `${pt.y}%`;
+            placeLabel(elTip, pt, 'above', 9);
+        }
+
+        function hideTip() {
+            clearTimeout(tipTimer);
+            elChartTip.classList.add('hs-hidden');
+        }
+
+        function inChart(e) {
+            const rect = elChartLayer.getBoundingClientRect();
+            return e.clientY >= rect.top && e.clientY <= rect.bottom;
+        }
+
+        // ── LAYOUT: chart starts below the indoor values (at the middle of the line below), but keeps at least half the height
+        function layoutChart() {
+            const card = elCard.getBoundingClientRect();
+            if (card.height === 0) return;
+            let start = elMain.getBoundingClientRect().bottom + 6;
+            const sub = elSubRow.getBoundingClientRect();
+            if (sub.height > 0) start = Math.max(start, (sub.top + sub.bottom) / 2);
+            const top = Math.max(0, Math.min(start - card.top, card.height * 0.5));
+            root.style.setProperty('--chart-top', `${top.toFixed(1)}px`);
         }
 
         // ── SDK: handleMessage (data transfer) ───────────────────────────────
@@ -753,10 +919,10 @@
                     case 'difference':
                         elDifference.textContent = value ?? '';
                         elDifferenceItem.classList.toggle('hs-hidden', !value);
+                        needsSub = true;
                         break;
                     case 'alert':
                         elHint.classList.toggle('hs-alert', !!value);
-                        elDifferenceItem.classList.toggle('hs-alert', !!value);
                         break;
                     case 'titles':
                         elHint.title = value?.hint ?? '';
@@ -778,7 +944,7 @@
                 }
             }
             if (needsSub) {
-                elSubRow.classList.toggle('hs-hidden', !elOutdoor.textContent);
+                elSubRow.classList.toggle('hs-hidden', !elOutdoor.textContent && !elDifference.textContent);
             }
             if (needsItems) buildItems();
             if (needsChart) renderChart();
@@ -786,6 +952,39 @@
 
         // ── INIT: ────────────────────────────────────────────────────────────
         new ResizeObserver(() => fitItems()).observe(elExtra);
+        const chartObserver = new ResizeObserver(() => layoutChart());
+        chartObserver.observe(elCard);
+        chartObserver.observe(elMain);
+        chartObserver.observe(elSubRow);
+
+        // Mouse: values while hovering; touch: values while the finger moves sideways, briefly kept afterwards
+        let tracking = false;
+        elCard.addEventListener('pointermove', e => {
+            if (e.pointerType === 'mouse') {
+                if (plot && inChart(e)) {
+                    showTip(e.clientX);
+                } else {
+                    hideTip();
+                }
+            } else if (tracking) {
+                showTip(e.clientX);
+            }
+        });
+        elCard.addEventListener('pointerleave', e => {
+            if (e.pointerType === 'mouse') hideTip();
+        });
+        elCard.addEventListener('pointerdown', e => {
+            if (e.pointerType === 'mouse' || !plot || !inChart(e)) return;
+            tracking = true;
+            showTip(e.clientX);
+        });
+        const endTracking = () => {
+            if (!tracking) return;
+            tracking = false;
+            tipTimer = setTimeout(hideTip, 2500);
+        };
+        elCard.addEventListener('pointerup', endTracking);
+        elCard.addEventListener('pointercancel', endTracking);
     </script>
 </body>
 

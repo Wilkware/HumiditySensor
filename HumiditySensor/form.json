@@ -87,36 +87,57 @@
             "caption": "🧭 Ventilation logic ...",
             "items": [
                 {
-                    "type": "Select",
-                    "name": "UpdateTimer",
-                    "caption": "Update Timer:",
-                    "width": "220px",
-                    "options": [
+                    "type": "RowLayout",
+                    "items": [
                         {
-                            "label": "5 min",
-                            "value": 5
+                            "type": "Select",
+                            "name": "UpdateTimer",
+                            "caption": "Update Timer:",
+                            "width": "220px",
+                            "options": [
+                                {
+                                    "label": "5 min",
+                                    "value": 5
+                                },
+                                {
+                                    "label": "15 min",
+                                    "value": 15
+                                },
+                                {
+                                    "label": "30 min",
+                                    "value": 30
+                                },
+                                {
+                                    "label": "60 min",
+                                    "value": 60
+                                },
+                                {
+                                    "label": "2 h",
+                                    "value": 120
+                                }
+                            ]
                         },
                         {
-                            "label": "15 min",
-                            "value": 15
-                        },
-                        {
-                            "label": "30 min",
-                            "value": 30
-                        },
-                        {
-                            "label": "60 min",
-                            "value": 60
-                        },
-                        {
-                            "label": "2 h",
-                            "value": 120
+                            "type": "Select",
+                            "name": "HintMode",
+                            "caption": "Hint shows:",
+                            "width": "350px",
+                            "options": [
+                                {
+                                    "label": "Ventilation dries the room air",
+                                    "value": 0
+                                },
+                                {
+                                    "label": "Ventilation required (like notification)",
+                                    "value": 1
+                                }
+                            ]
                         }
                     ]
                 },
                 {
                     "type": "Label",
-                    "caption": "The variables 'Hint' and 'Result' are calculated solely from the climate data, independently of these settings. The following settings only determine when a notification is sent.",
+                    "caption": "The variables 'Result' and 'Recommendation' are calculated solely from the climate data, 'Hint' as well unless it shows 'Ventilation required'. The following settings determine when a notification is sent (and when 'Hint' reports it).",
                     "italic": true
                 },
                 {
@@ -597,6 +618,34 @@
                     "width": "300px"
                 },
                 {
+                    "type": "RowLayout",
+                    "items": [
+                        {
+                            "type": "NumberSpinner",
+                            "name": "ThermalLimit",
+                            "caption": "Limit thermal state:",
+                            "digits": 1,
+                            "minimum": 0.1,
+                            "maximum": 3,
+                            "width": "300px"
+                        },
+                        {
+                            "type": "NumberSpinner",
+                            "name": "ThermalHysteresis",
+                            "caption": "Hysteresis:",
+                            "digits": 1,
+                            "minimum": 0,
+                            "maximum": 1,
+                            "width": "300px"
+                        }
+                    ]
+                },
+                {
+                    "type": "Label",
+                    "caption": "Thermal state (optional variable): above +limit 'Too warm', below -limit 'Too cool'; back to 'Comfortable' only once the PMV has returned by the hysteresis (e.g. 0.5 / 0.2: too warm above +0.5, comfortable again below +0.3). Suitable as trigger for shading or fans.",
+                    "italic": true
+                },
+                {
                     "type": "Label",
                     "caption": "PMV: -3 cold, -2 cool, -1 slightly cool, 0 neutral, +1 slightly warm, +2 warm, +3 hot. The comfort range is between -0.5 and +0.5 (PPD below 10%). Without a radiant temperature sensor, the room temperature is used. For bedrooms select the bedding as clothing; the model is designed for awake persons, so sleeping is only roughly represented.",
                     "italic": true
@@ -850,12 +899,17 @@
                 {
                     "type": "CheckBox",
                     "name": "CreateDewPoint",
-                    "caption": "Create variables for indoor and outdoor dewpoint?"
+                    "caption": "Create variables for dew point?"
                 },
                 {
                     "type": "CheckBox",
                     "name": "CreateWaterContent",
-                    "caption": "Create variables for indoor and outdoor water content?"
+                    "caption": "Create variables for water content?"
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "CreateOutdoorValues",
+                    "caption": "Create variables for the outdoor values (dew point, water content)?"
                 },
                 {
                     "type": "CheckBox",
@@ -871,6 +925,11 @@
                     "type": "CheckBox",
                     "name": "CreateThermalComfort",
                     "caption": "Create variables for thermal comfort (PMV/PPD)?"
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "CreateThermalState",
+                    "caption": "Create variable for thermal state (too cool/comfortable/too warm)?"
                 }
             ]
         }
