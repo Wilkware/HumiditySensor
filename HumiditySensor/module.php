@@ -404,7 +404,8 @@ class HumiditySensor extends IPSModuleStrict
         $this->RegisterPropertyFloat('Activity', 1.2);
         $this->RegisterPropertyFloat('AirVelocity', 0.1);
         $this->RegisterPropertyInteger('TempRadiant', 0);
-        $this->RegisterPropertyFloat('ThermalLimit', 0.5);
+        $this->RegisterPropertyFloat('ThermalLimitUpper', 0.5);
+        $this->RegisterPropertyFloat('ThermalLimitLower', -0.5);
         $this->RegisterPropertyFloat('ThermalHysteresis', 0.2);
         // Message management
         $this->RegisterPropertyInteger('DashboardMessage', 0);
@@ -461,6 +462,28 @@ class HumiditySensor extends IPSModuleStrict
 
         // Wait for the kernel before accessing foreign variables
         $this->RegisterMessage(0, IPS_KERNELSTARTED);
+    }
+
+    /**
+     * Migrate the persistence of existing instances after a module update.
+     * The symmetric thermal limit is split into an upper and a lower limit.
+     *
+     * @param string $json Persistence (configuration and attributes) of the instance
+     *
+     * @return string New persistence, empty if nothing has changed
+     */
+    public function Migrate(string $json): string
+    {
+        parent::Migrate($json);
+        $data = json_decode($json);
+        if (!isset($data->configuration->ThermalLimit)) {
+            return '';
+        }
+        $limit = abs((float) $data->configuration->ThermalLimit);
+        $data->configuration->ThermalLimitUpper = $limit;
+        $data->configuration->ThermalLimitLower = -$limit;
+        unset($data->configuration->ThermalLimit);
+        return json_encode($data);
     }
 
     /**
@@ -1557,7 +1580,7 @@ class HumiditySensor extends IPSModuleStrict
 
     /**
      * Thermal state with hysteresis: too cool, comfortable or too warm.
-     * Beyond the limit the state changes immediately, back to comfortable only once the PMV
+     * Beyond a limit the state changes immediately, back to comfortable only once the PMV
      * has returned by the hysteresis, in between the previous state is kept.
      *
      * @param float $pmv   Predicted mean vote
@@ -1567,15 +1590,16 @@ class HumiditySensor extends IPSModuleStrict
      */
     private function ThermalState(float $pmv, int $state): int
     {
-        $limit = $this->ReadPropertyFloat('ThermalLimit');
-        $back = $limit - $this->ReadPropertyFloat('ThermalHysteresis');
-        if ($pmv > $limit) {
+        $upper = $this->ReadPropertyFloat('ThermalLimitUpper');
+        $lower = $this->ReadPropertyFloat('ThermalLimitLower');
+        $hysteresis = $this->ReadPropertyFloat('ThermalHysteresis');
+        if ($pmv > $upper) {
             return self::THERMAL_WARM;
         }
-        if ($pmv < -$limit) {
+        if ($pmv < $lower) {
             return self::THERMAL_COOL;
         }
-        if (($state === self::THERMAL_WARM && $pmv < $back) || ($state === self::THERMAL_COOL && $pmv > -$back)) {
+        if (($state === self::THERMAL_WARM && $pmv < $upper - $hysteresis) || ($state === self::THERMAL_COOL && $pmv > $lower + $hysteresis)) {
             return self::THERMAL_COMFORTABLE;
         }
         return $state;

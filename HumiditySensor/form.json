@@ -622,10 +622,19 @@
                     "items": [
                         {
                             "type": "NumberSpinner",
-                            "name": "ThermalLimit",
-                            "caption": "Limit thermal state:",
-                            "digits": 1,
-                            "minimum": 0.1,
+                            "name": "ThermalLimitUpper",
+                            "caption": "Upper limit thermal state:",
+                            "digits": 2,
+                            "minimum": -3,
+                            "maximum": 3,
+                            "width": "300px"
+                        },
+                        {
+                            "type": "NumberSpinner",
+                            "name": "ThermalLimitLower",
+                            "caption": "Lower limit thermal state:",
+                            "digits": 2,
+                            "minimum": -3,
                             "maximum": 3,
                             "width": "300px"
                         },
@@ -633,7 +642,7 @@
                             "type": "NumberSpinner",
                             "name": "ThermalHysteresis",
                             "caption": "Hysteresis:",
-                            "digits": 1,
+                            "digits": 2,
                             "minimum": 0,
                             "maximum": 1,
                             "width": "300px"
@@ -642,7 +651,7 @@
                 },
                 {
                     "type": "Label",
-                    "caption": "Thermal state (optional variable): above +limit 'Too warm', below -limit 'Too cool'; back to 'Comfortable' only once the PMV has returned by the hysteresis (e.g. 0.5 / 0.2: too warm above +0.5, comfortable again below +0.3). Suitable as trigger for shading or fans.",
+                    "caption": "Thermal state (optional variable): above the upper limit 'Too warm', below the lower limit 'Too cool'; back to 'Comfortable' only once the PMV has returned by the hysteresis (e.g. +0.5 / -0.5 / 0.2: too warm above +0.5, comfortable again below +0.3). The lower limit must be below the upper limit, the hysteresis at most half the distance between them. Suitable as trigger for shading or fans.",
                     "italic": true
                 },
                 {
