@@ -3,7 +3,7 @@
 [![Home](https://img.shields.io/badge/Home-wilkware.de-0b1830.svg?style=flat-square)](https://wilkware.de/module/luftfeuchtigkeitssensor/)
 [![Version](https://img.shields.io/badge/Symcon-PHP--Modul-red.svg?style=flat-square)](https://www.symcon.de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/)
 [![Product](https://img.shields.io/badge/Symcon%20Version-8.1-blue.svg?style=flat-square)](https://www.symcon.de/produkt/)
-[![Version](https://img.shields.io/badge/Modul%20Version-4.0.20261019-orange.svg?style=flat-square)](https://github.com/Wilkware/HumiditySensor)
+[![Version](https://img.shields.io/badge/Modul%20Version-4.1.20261022-orange.svg?style=flat-square)](https://github.com/Wilkware/HumiditySensor)
 [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![Actions](https://img.shields.io/github/actions/workflow/status/wilkware/HumiditySensor/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/Wilkware/HumiditySensor/actions)
 
@@ -32,6 +32,7 @@ Das Modul Luftfeuchtigkeitssensor (Humidity Sensor) berechnet anhand der Innen- 
 * Bewertung des Raumklimas (Komfortindex) nach der ELV-Komfortanzeige
 * Berechnung der thermischen Behaglichkeit (PMV/PPD) nach ISO 7730
 * Optionaler thermischer Zustand (zu kühl/behaglich/zu warm) mit Hysterese, z. B. als Auslöser für Beschattung oder Lüfter
+* Berechnung bei Änderung der Messwerte (gebündelt) oder zyklisch, optional Kopie der Messwerte als Statusvariablen
 * Hinweis, ob ein Lüften des Raumes angebracht wäre
 * Textuelle Erklärung für die Entscheidung
 * Eigene, an die Größe angepasste Kachel für die Kachel-Visualisierung mit wählbaren Elementen und Feuchteverlauf aus dem Archiv
@@ -70,7 +71,7 @@ __Hinweis:__ Liefert ein Sensor die Luftfeuchtigkeit als Anteil (Float-Variable 
 
 Name                              | Beschreibung
 --------------------------------- | ---------------------------------
-Aktualisierungszeit               | Aktualisierungszeitraum in Minuten
+Aktualisierungszeit               | _Bei Änderung_ (Standard für neue Instanzen): Berechnung 2 Sekunden nach der Änderung einer Klimavariable (bzw. der Strahlungstemperatur), gemeinsam gesendete Werte (z. B. Temperatur und Feuchte eines Wandthermostats) werden gebündelt, zusätzlich alle 60 Minuten; alternativ fest alle 5 Minuten bis 2 Stunden (Instanzen aus früheren Versionen behalten ihre Einstellung)
 Hinweis zeigt                     | _Lüften trocknet die Raumluft_ (Standard): Die Variable _Hinweis_ wird allein aus den Klimadaten berechnet; _Lüften erforderlich (wie Meldung)_: _Hinweis_ folgt der kompletten Lüftungslogik (Jahreszeit, Mindest-Raumfeuchte, Mindest-Differenz) und entspricht damit dem pulsierenden Punkt der Kachel – geeignet als Auslöser für Automationen, z. B. ein Fenster zu öffnen
 Jahreszeit                        | _Immer_: Meldungen ganzjährig; _Heizperiode (automatisch)_: Meldungen nur in der Heizperiode, ermittelt über die geglättete Außentemperatur; _Heizperiode (Kalender)_: Meldungen nur in den gewählten Monaten
 Heizgrenze                        | Nur bei _automatisch_ (bzw. bei _Immer_ mit automatischer Kleidung): Die Außentemperatur wird über ca. 48 Stunden geglättet (wie bei Heizungsreglern). Die Heizperiode beginnt, wenn der geglättete Wert 1 K unter die Heizgrenze fällt, und endet, wenn er 1 K darüber steigt (Standard: 15 °C).
@@ -136,6 +137,7 @@ Name                               | Beschreibung
 Meldung an Anzeige senden          | Auswahl, ob ein Eintrag in die Meldungsverwaltung erfolgen soll oder nicht (Ja/Nein)
 Lebensdauer der Nachricht          | Wie lange soll die Meldung höchstens angezeigt werden? Spätestens wenn Lüften nicht mehr empfohlen wird, wird sie automatisch entfernt ('Bis nicht mehr nötig' = ohne Zeitbegrenzung).
 Nachricht an Visualisierung senden | Auswahl, ob eine Push-Nachricht gesendet werden soll oder nicht (Ja/Nein)
+Mindestpause                       | Mindestabstand zwischen zwei Push-Nachrichten, damit Bedingungen, die um einen Grenzwert hin und her wechseln, nicht jedes Mal eine Nachricht auslösen; die Dashboard-Meldung folgt weiterhin der Empfehlung (Standard: 30 min, Instanzen aus früheren Versionen: _Keine_)
 Raumname                           | Text zur eindeutigen Zuordnung des Raums
 Visualisierungs-Instanz            | WebFront- oder Kachel-Visualisierung, an welche die Push-Nachrichten gesendet werden sollen
 Meldungsskript                     | Skript ID des Meldungsverwaltungsskripts, weiterführende Infos im Forum: [Meldungsanzeige im WebFront](https://community.symcon.de/t/meldungsanzeige-im-webfront/23473)
@@ -152,7 +154,7 @@ Farbe Feuchte         | Farbe der Feuchtelinie; _Transparent_ verwendet die Akze
 Farbe Temperatur      | Farbe der Temperaturlinie; _Transparent_ verwendet die (abgeschwächte) Textfarbe des Themes
 Komfortband anzeigen? | Zeigt hinter dem Verlauf den typischen Feuchtebereich des Raumtyps als grüne Zone (bei _Benutzerdefiniert_ 40 % bis zur Mindest-Raumfeuchte)
 
-__Hinweis:__ Der Verlauf wird aus dem Archiv gelesen (Stundenmittel) und erscheint nur, wenn die Raumfeuchte (und Temperatur) im Archiv geloggt wird. Das Modul schaltet das Logging nicht selbst ein.
+__Hinweis:__ Der Verlauf wird aus dem Archiv gelesen (Stundenmittel, höchstens alle 15 Minuten neu) und erscheint nur, wenn die Raumfeuchte (und Temperatur) im Archiv geloggt wird. Das Modul schaltet das Logging nicht selbst ein.
 
 > ⚙️ Erweiterte Einstellungen ...
 
@@ -161,10 +163,14 @@ Name                                                                  | Beschrei
 Variablen für den Taupunkt anlegen?                                   | Legt die Variablen für die Taupunkte an.
 Variablen für den Wassergehalt der Luft anlegen?                      | Legt die Variablen für die Wassergehalte an.
 Variablen für die Außenwerte (Taupunkt, Wassergehalt) anlegen?        | Legt zusätzlich Taupunkt und Wassergehalt der Außenluft an. Ausschalten, wenn diese Werte schon anderweitig (z. B. Wetterstation) vorhanden sind; Berechnung und Kachel brauchen sie nicht.
+Variablen für die Messwerte innen (Temperatur, Feuchte) anlegen?      | Legt eine Kopie der Innenwerte an, mit denen zuletzt gerechnet wurde.
+Variablen für die Messwerte außen (Temperatur, Feuchte) anlegen?      | Legt eine Kopie der Außenwerte an, mit denen zuletzt gerechnet wurde.
 Variablen für Hitzeindex (innen) anlegen?                             | Legt die Variablen für Hitzeindex und Hitzewarnung an.
 Variable für Raumklima-Index anlegen?                                 | Legt die Variable für den Raumklima-Index an.
 Variablen für thermische Behaglichkeit (PMV/PPD) anlegen?             | Legt die Variablen für PMV und PPD an (Einstellungen siehe 'Thermische Behaglichkeit').
-Variable für thermischen Zustand (zu kühl/behaglich/zu warm) anlegen? | Legt die Variable für den thermischen Zustand an (nur zusammen mit PMV/PPD, Grenzwert und Hysterese siehe 'Thermische Behaglichkeit').
+Variable für thermischen Zustand (zu kühl/behaglich/zu warm) anlegen? | Legt die Variable für den thermischen Zustand an (nur zusammen mit PMV/PPD, Grenzwerte und Hysterese siehe 'Thermische Behaglichkeit').
+
+__Messwerte:__ Berechnung und Kachel lesen immer die ausgewählten Originalvariablen, die Kopien werden nur geschrieben. Ein Archiv für die Kopien kann bei Bedarf selbst aktiviert werden, ist bei fester Aktualisierungszeit aber gröber als das des Originals.
 
 __Hitzeindex:__ Der Hitzeindex beschreibt die gefühlte Temperatur aus Lufttemperatur und Luftfeuchtigkeit. Berechnet wird er nach dem Verfahren des US-Wetterdienstes ([NWS](https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml)): Ab ca. 27 °C gilt die Regressionsformel nach Rothfusz (Steadman 1979), darunter eine einfache Näherung, die nahe an der Raumtemperatur liegt. Die Warnstufen entsprechen der üblichen Einteilung:
 
@@ -218,9 +224,13 @@ ComfortIndex        | Raumklima-Index     | Integer | Bewertung des Raumklimas (
 PredictedMeanVote   | Behaglichkeit (PMV) | Float   | Zu erwartendes Wärmeempfinden nach ISO 7730 (-3 kalt … +3 heiß)
 PredictedDissatisfied | Unzufriedene (PPD) | Float  | Zu erwartender Anteil unzufriedener Personen nach ISO 7730
 ThermalState        | Thermischer Zustand | Integer | Zustand aus dem PMV mit Hysterese (-1 = zu kühl, 0 = behaglich, 1 = zu warm), z. B. als Auslöser für Beschattung oder Lüfter
+TemperatureIndoor   | Raumtemperatur      | Float   | Kopie der Innentemperatur der letzten Berechnung
+HumidityIndoor      | Raumfeuchte         | Float   | Kopie der Raumfeuchte der letzten Berechnung (in %)
+TemperatureOutdoor  | Außentemperatur     | Float   | Kopie der Außentemperatur der letzten Berechnung
+HumidityOutdoor     | Außenfeuchte        | Float   | Kopie der Außenfeuchte der letzten Berechnung (in %)
 MessageThreshold    | Schwellwert         | Integer | _Veraltet:_ Schwellwert der Differenz, ab dem eine Meldung zum Lüften erfolgt
 
-_Hinweis:_ Die Variablen für Taupunkte, Wassergehalte, Hitzeindex, Raumklima-Index, Behaglichkeit und thermischen Zustand werden nur angelegt, wenn die entsprechende Checkbox unter 'Erweiterte Einstellungen' aktiviert ist, die Variable für die Heizperiode über die Checkbox in der 'Lüftungslogik'.
+_Hinweis:_ Die Variablen für Taupunkte, Wassergehalte, Hitzeindex, Raumklima-Index, Behaglichkeit, thermischen Zustand und Messwerte werden nur angelegt, wenn die entsprechende Checkbox unter 'Erweiterte Einstellungen' aktiviert ist, die Variable für die Heizperiode über die Checkbox in der 'Lüftungslogik'.
 
 _Veraltet:_ Die Variable _Schwellwert_ wird nicht mehr angelegt, da die Lüftungslogik sie ersetzt. Ist sie aus einer früheren Version noch vorhanden, bleibt sie erhalten und wird als zusätzliche Bedingung berücksichtigt (Meldung nur, wenn die Differenz den Schwellwert überschreitet). Wird sie nicht mehr benötigt, kann sie manuell gelöscht werden.
 
@@ -284,6 +294,14 @@ Die Funktion liefert keinerlei Rückgabewert.
 __Beispiel__: `THS_Update(12345);`
 
 ### 9. Versionshistorie
+
+v4.1.20261022
+
+* _NEU_: Aktualisierung bei Änderung der Messwerte (gebündelt, zusätzlich stündlich), Standard für neue Instanzen
+* _NEU_: Mindestpause zwischen Push-Nachrichten
+* _NEU_: Optionale Kopie der Messwerte innen und außen als Statusvariablen
+* _NEU_: Getrennter oberer und unterer Grenzwert für den thermischen Zustand, Grenzwerte und Hysterese mit 2 Nachkommastellen
+* _FIX_: Verlauf der Kachel wird zwischengespeichert (weniger Archivabfragen)
 
 v4.0.20261019
 

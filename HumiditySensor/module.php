@@ -46,6 +46,18 @@ class HumiditySensor extends IPSModuleStrict
         'HumyIndoor',
     ];
 
+    /** @var int Update timer value for an event-driven update on changes of the climate variables */
+    private const UPDATE_ON_CHANGE = 0;
+
+    /** @var int Delay in seconds after a change to bundle values sent together (e.g. temperature and humidity of one device) */
+    private const UPDATE_DEBOUNCE = 2;
+
+    /** @var int Cyclic update in minutes in addition to the event-driven update (season, sensors without changes) */
+    private const UPDATE_HEARTBEAT = 60;
+
+    /** @var int Lifetime of the cached history in seconds */
+    private const HISTORY_CACHE_TIME = 900;
+
     /** @var int Season mode: notifications all year round */
     private const SEASON_ALWAYS = 0;
 
@@ -306,6 +318,23 @@ class HumiditySensor extends IPSModuleStrict
         'USAGE_TYPE'   => 1,
     ];
 
+    /** @var array<string,mixed> Temperature presentation of the measured values (Value) */
+    private const THS_PRESENTATION_TEMPERATURE = [
+        'DIGITS'       => 1,
+        'ICON'         => 'temperature-half',
+        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+        'SUFFIX'       => ' °C',
+        'USAGE_TYPE'   => 1,
+    ];
+
+    /** @var array<string,mixed> Relative humidity presentation of the measured values (Value) */
+    private const THS_PRESENTATION_HUMIDITY = [
+        'DIGITS'       => 0,
+        'ICON'         => 'droplet',
+        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+        'SUFFIX'       => ' %',
+    ];
+
     /** @var array<string,mixed> Water content presentation (Value) */
     private const THS_PRESENTATION_WATER_CONTENT = [
         'COLOR'        => 8421504,
@@ -414,8 +443,9 @@ class HumiditySensor extends IPSModuleStrict
         $this->RegisterPropertyInteger('ScriptMessage', 0);
         $this->RegisterPropertyString('RoomName', 'Unknown');
         $this->RegisterPropertyInteger('LifeTime', 0);
+        $this->RegisterPropertyInteger('NotificationPause', 30);
         // Ventilation logic
-        $this->RegisterPropertyInteger('UpdateTimer', 15);
+        $this->RegisterPropertyInteger('UpdateTimer', self::UPDATE_ON_CHANGE);
         $this->RegisterPropertyInteger('HintMode', self::HINT_CLIMATE_DATA);
         $this->RegisterPropertyInteger('SeasonMode', self::SEASON_ALWAYS);
         $this->RegisterPropertyFloat('HeatingLimit', 15.0);
@@ -437,6 +467,8 @@ class HumiditySensor extends IPSModuleStrict
         $this->RegisterPropertyBoolean('CreateDewPoint', true);
         $this->RegisterPropertyBoolean('CreateWaterContent', true);
         $this->RegisterPropertyBoolean('CreateOutdoorValues', true);
+        $this->RegisterPropertyBoolean('CreateMeasuredIndoor', false);
+        $this->RegisterPropertyBoolean('CreateMeasuredOutdoor', false);
         $this->RegisterPropertyBoolean('CreateHeatIndex', false);
         $this->RegisterPropertyBoolean('CreateComfortIndex', false);
         $this->RegisterPropertyBoolean('CreateThermalComfort', false);
@@ -449,6 +481,8 @@ class HumiditySensor extends IPSModuleStrict
         $this->RegisterAttributeString('SeasonState', '{}');
         // Notification already sent for the current ventilation phase (survives restarts)
         $this->RegisterAttributeBoolean('Notified', false);
+        // Time of the last push notification (minimum pause between notifications)
+        $this->RegisterAttributeInteger('NotificationTime', 0);
         // Dashboard message of the current ventilation phase (number, expiry and text), removed when the phase ends
         $this->RegisterAttributeString('DashboardEntry', '{}');
         // Last determined heating period (tile chip, also without the variable)
@@ -467,6 +501,7 @@ class HumiditySensor extends IPSModuleStrict
     /**
      * Migrate the persistence of existing instances after a module update.
      * The symmetric thermal limit is split into an upper and a lower limit.
+     * Existing instances keep the former defaults of the update timer (15 min) and the notification pause (none).
      *
      * @param string $json Persistence (configuration and attributes) of the instance
      *
@@ -476,14 +511,25 @@ class HumiditySensor extends IPSModuleStrict
     {
         parent::Migrate($json);
         $data = json_decode($json);
-        if (!isset($data->configuration->ThermalLimit)) {
+        if (!isset($data->configuration)) {
             return '';
         }
-        $limit = abs((float) $data->configuration->ThermalLimit);
-        $data->configuration->ThermalLimitUpper = $limit;
-        $data->configuration->ThermalLimitLower = -$limit;
-        unset($data->configuration->ThermalLimit);
-        return json_encode($data);
+        $changed = false;
+        if (isset($data->configuration->ThermalLimit)) {
+            $limit = abs((float) $data->configuration->ThermalLimit);
+            $data->configuration->ThermalLimitUpper = $limit;
+            $data->configuration->ThermalLimitLower = -$limit;
+            unset($data->configuration->ThermalLimit);
+            $changed = true;
+        }
+        if (!isset($data->configuration->NotificationPause)) {
+            if (!isset($data->configuration->UpdateTimer)) {
+                $data->configuration->UpdateTimer = 15;
+            }
+            $data->configuration->NotificationPause = 0;
+            $changed = true;
+        }
+        return $changed ? json_encode($data) : '';
     }
 
     /**
@@ -590,10 +636,35 @@ class HumiditySensor extends IPSModuleStrict
         $create = $create && $this->ReadPropertyBoolean('CreateThermalState');
         $state = $this->TranslatePresentation(self::THS_PRESENTATION_THERMAL_STATE, 'INTERVALS', 'ConstantValue');
         $this->MaintainVariable('ThermalState', $this->Translate('Thermal state'), VARIABLETYPE_INTEGER, $state, 15, $create);
+        // Copy of the measured values used for the last calculation
+        $create = $this->ReadPropertyBoolean('CreateMeasuredIndoor');
+        $this->MaintainVariable('TemperatureIndoor', $this->Translate('Indoor temperature'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_TEMPERATURE, 16, $create);
+        $this->MaintainVariable('HumidityIndoor', $this->Translate('Indoor humidity'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_HUMIDITY, 17, $create);
+        $create = $this->ReadPropertyBoolean('CreateMeasuredOutdoor');
+        $this->MaintainVariable('TemperatureOutdoor', $this->Translate('Outdoor temperature'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_TEMPERATURE, 18, $create);
+        $this->MaintainVariable('HumidityOutdoor', $this->Translate('Outdoor humidity'), VARIABLETYPE_FLOAT, self::THS_PRESENTATION_HUMIDITY, 19, $create);
+
+        // Settings may have changed the history
+        $this->SetBuffer('History', '');
 
         // Foreign variables may not be available yet, ApplyChanges is called again on IPS_KERNELSTARTED
         if (IPS_GetKernelRunlevel() !== KR_READY) {
             return;
+        }
+
+        // Event-driven update: (re)register the changes of the climate variables
+        foreach ($this->GetMessageList() as $senderID => $messages) {
+            if (in_array(VM_UPDATE, $messages, true)) {
+                $this->UnregisterMessage($senderID, VM_UPDATE);
+            }
+        }
+        if ($this->ReadPropertyInteger('UpdateTimer') === self::UPDATE_ON_CHANGE) {
+            foreach ([...self::CLIMATE_VARIABLES, 'TempRadiant'] as $property) {
+                $variable = $this->ReadPropertyInteger($property);
+                if ($this->IsValidVariable($variable)) {
+                    $this->RegisterMessage($variable, VM_UPDATE);
+                }
+            }
         }
 
         // Delete all references in order to readd them
@@ -627,8 +698,6 @@ class HumiditySensor extends IPSModuleStrict
             return;
         }
 
-        // Update trigger timer
-        $this->SetTimerInterval('UpdateTrigger', 1000 * 60 * $this->ReadPropertyInteger('UpdateTimer'));
         $this->SetStatus(102);
 
         // Calculate immediately with the new settings
@@ -655,6 +724,10 @@ class HumiditySensor extends IPSModuleStrict
     {
         if ($message === IPS_KERNELSTARTED) {
             $this->ApplyChanges();
+        }
+        // Values sent together trigger only one calculation, each further change restarts the delay
+        if ($message === VM_UPDATE && $data[1]) {
+            $this->SetTimerInterval('UpdateTrigger', 1000 * self::UPDATE_DEBOUNCE);
         }
     }
 
@@ -718,6 +791,10 @@ class HumiditySensor extends IPSModuleStrict
      */
     public function Update(): void
     {
+        // Back to the cyclic interval (also after the delay of the event-driven update)
+        $minutes = $this->ReadPropertyInteger('UpdateTimer');
+        $this->SetTimerInterval('UpdateTrigger', 1000 * 60 * ($minutes === self::UPDATE_ON_CHANGE ? self::UPDATE_HEARTBEAT : $minutes));
+
         // Read climate data
         $tempOutdoor = $this->ReadClimateValue('TempOutdoor', false);
         $humyOutdoor = $this->ReadClimateValue('HumyOutdoor', true);
@@ -744,14 +821,24 @@ class HumiditySensor extends IPSModuleStrict
         }
         $this->SetStatus(102);
 
+        // Copy of the measured values
+        if ($this->ReadPropertyBoolean('CreateMeasuredIndoor')) {
+            $this->SetValueFloat('TemperatureIndoor', $tempIndoor);
+            $this->SetValueFloat('HumidityIndoor', $humyIndoor);
+        }
+        if ($this->ReadPropertyBoolean('CreateMeasuredOutdoor')) {
+            $this->SetValueFloat('TemperatureOutdoor', $tempOutdoor);
+            $this->SetValueFloat('HumidityOutdoor', $humyOutdoor);
+        }
+
         // Vapour pressure in hPa
+        $outdoor = $this->ReadPropertyBoolean('CreateOutdoorValues');
         $saturationOutdoor = $this->SaturationVapourPressure($tempOutdoor);
         $saturationIndoor = $this->SaturationVapourPressure($tempIndoor);
         $vapourOutdoor = $humyOutdoor / 100 * $saturationOutdoor;
         $vapourIndoor = $humyIndoor / 100 * $saturationIndoor;
 
         // Dew point
-        $outdoor = $this->ReadPropertyBoolean('CreateOutdoorValues');
         if ($this->ReadPropertyBoolean('CreateDewPoint')) {
             if ($outdoor) {
                 $this->SetValueFloat('DewPointOutdoor', $this->DewPoint($tempOutdoor, $vapourOutdoor));
@@ -871,7 +958,11 @@ class HumiditySensor extends IPSModuleStrict
         // Notify only once each time the conditions are met, the dashboard message follows the recommendation
         // and disappears when the conditions no longer apply
         if ($notify && !$this->ReadAttributeBoolean('Notified')) {
-            $this->SendMessages($result);
+            // Conditions flapping around a limit must not push a notification each time
+            $pause = $this->ReadPropertyInteger('NotificationPause') * 60;
+            $push = (time() - $this->ReadAttributeInteger('NotificationTime')) >= $pause;
+            $this->LogDebug(__FUNCTION__, sprintf('Push notification: %s (pause: %d min)', $this->Stringify($push), $pause / 60));
+            $this->SendMessages($result, $push);
         } elseif ($notify) {
             $this->ReplaceDashboardMessage($result);
         } else {
@@ -1072,13 +1163,21 @@ class HumiditySensor extends IPSModuleStrict
         if ($archive === 0) {
             return null;
         }
+        // Hourly averages hardly change, the event-driven update must not query the archive each time
         $end = time();
-        $start = $end - $this->ReadPropertyInteger('ChartPeriod') * 3600;
-        $humidity = $this->ReadHistory($archive, 'HumyIndoor', $start, $end, true);
+        $cache = json_decode($this->GetBuffer('History'), true);
+        if (is_array($cache) && ($end - (int) ($cache['time'] ?? 0)) < self::HISTORY_CACHE_TIME) {
+            $humidity = $cache['humidity'] ?? null;
+            $temperature = $cache['temperature'] ?? null;
+        } else {
+            $start = $end - $this->ReadPropertyInteger('ChartPeriod') * 3600;
+            $humidity = $this->ReadHistory($archive, 'HumyIndoor', $start, $end, true);
+            $temperature = ($mode === 2 && $humidity !== null) ? $this->ReadHistory($archive, 'TempIndoor', $start, $end, false) : null;
+            $this->SetBuffer('History', json_encode(['time' => $end, 'humidity' => $humidity, 'temperature' => $temperature]));
+        }
         if ($humidity === null) {
             return null;
         }
-        $temperature = ($mode === 2) ? $this->ReadHistory($archive, 'TempIndoor', $start, $end, false) : null;
 
         // Comfort band of the room type, for a custom room up to the minimum room humidity
         $band = null;
@@ -1205,10 +1304,11 @@ class HumiditySensor extends IPSModuleStrict
      * Send the ventilation recommendation to the dashboard and/or the visualization.
      *
      * @param string $result Recommendation text
+     * @param bool   $push   True to send the push notification (outside the minimum pause)
      *
      * @return void
      */
-    private function SendMessages(string $result): void
+    private function SendMessages(string $result, bool $push): void
     {
         $text = $this->ReadPropertyString('RoomName') . ': ' . $result;
 
@@ -1220,7 +1320,8 @@ class HumiditySensor extends IPSModuleStrict
 
         // Notification
         $visu = $this->ReadPropertyInteger('InstanceWebfront');
-        if ($this->ReadPropertyInteger('NotificationMessage') && $visu >= self::IPS_MIN_ID) {
+        if ($push && $this->ReadPropertyInteger('NotificationMessage') && $visu >= self::IPS_MIN_ID) {
+            $this->WriteAttributeInteger('NotificationTime', time());
             if ($this->IsWebFrontVisuInstance($visu)) {
                 WFC_PushNotification($visu, $this->Translate('Ventilation note'), $text, 'turn', 0);
             }

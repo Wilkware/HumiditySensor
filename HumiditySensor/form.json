@@ -96,6 +96,10 @@
                             "width": "220px",
                             "options": [
                                 {
+                                    "label": "On change",
+                                    "value": 0
+                                },
+                                {
                                     "label": "5 min",
                                     "value": 5
                                 },
@@ -134,6 +138,11 @@
                             ]
                         }
                     ]
+                },
+                {
+                    "type": "Label",
+                    "caption": "'On change' calculates a few seconds after a climate variable has changed (values sent together are bundled) and additionally every 60 min.",
+                    "italic": true
                 },
                 {
                     "type": "Label",
@@ -736,8 +745,45 @@
                                     "value": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "Select",
+                            "name": "NotificationPause",
+                            "caption": "Minimum pause:",
+                            "width": "250px",
+                            "options": [
+                                {
+                                    "label": "None",
+                                    "value": 0
+                                },
+                                {
+                                    "label": "15 min",
+                                    "value": 15
+                                },
+                                {
+                                    "label": "30 min",
+                                    "value": 30
+                                },
+                                {
+                                    "label": "60 min",
+                                    "value": 60
+                                },
+                                {
+                                    "label": "2 h",
+                                    "value": 120
+                                },
+                                {
+                                    "label": "4 h",
+                                    "value": 240
+                                }
+                            ]
                         }
                     ]
+                },
+                {
+                    "type": "Label",
+                    "caption": "The minimum pause prevents repeated notifications when the conditions change back and forth around a limit. The dashboard message is not affected.",
+                    "italic": true
                 },
                 {
                     "type": "Label",
@@ -919,6 +965,16 @@
                     "type": "CheckBox",
                     "name": "CreateOutdoorValues",
                     "caption": "Create variables for the outdoor values (dew point, water content)?"
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "CreateMeasuredIndoor",
+                    "caption": "Create variables for the indoor measured values (temperature, humidity)?"
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "CreateMeasuredOutdoor",
+                    "caption": "Create variables for the outdoor measured values (temperature, humidity)?"
                 },
                 {
                     "type": "CheckBox",
